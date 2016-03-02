@@ -1,4 +1,4 @@
-GL Intercept Log. Version : 1.33    Compile Date: Dec 30 2015    Run on: Wed Mar 02 10:41:43 2016
+GL Intercept Log. Version : 1.33    Compile Date: Dec 30 2015    Run on: Wed Mar 02 13:58:08 2016
 
 ===================================================
 ImageManager::Destructor - OpenGL id 1 is still active. (Image Memory leak?)

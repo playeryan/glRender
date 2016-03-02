@@ -56,16 +56,17 @@ out vec4 fColor;
 vec4 CalcLightInternal(BaseLight Light, vec3 LightDirection, vec3 Normal)
 {
 	// ambient color
-	vec4 ambientColor = vec4(Light.Color, 1.0f) * Light.AmbientIntensity;
-	vec4 ambientLight = min(ambientColor, vec4(1.0));
+	vec4 ambientColor = vec4(Light.Color * Light.AmbientIntensity, 1.0f);
+	
 	// diffuse color
-	float diffuseFactor = max(0.0, dot(Normal, -LightDirection));		
-	vec4 diffuseColor = vec4(Light.Color, 1.0f) * Light.DiffuseIntensity * diffuseFactor;
-	vec4 diffuseLight = min(diffuseColor, vec4(1.0));
+	vec4 diffuseColor = vec4(0.0, 0.0, 0.0, 0.0);
+	float diffuseFactor = dot(Normal, -LightDirection);		
 	// specualr color
 	vec4 specColor = vec4(0.0, 0.0, 0.0, 0.0);
 	if (diffuseFactor > 0)
 	{
+		diffuseColor = vec4(Light.Color * Light.DiffuseIntensity * diffuseFactor, 1.0f);
+
 		vec3 vertexToEye = normalize(eyeWorldPos - vPosInWorldSpace);
 		//vec3 reflectLight = normalize(reflect(LightDirection, Normal));		
 		//float specFactor = max(0.0, dot(vertexToEye, reflectLight));
@@ -75,8 +76,7 @@ vec4 CalcLightInternal(BaseLight Light, vec3 LightDirection, vec3 Normal)
 		specColor = vec4(Light.Color * specularIntensity * specFactor, 1.0f);
 	}
 
-	//return (ambientColor + diffuseColor);
-	return (ambientLight + diffuseLight + specColor);
+	return (ambientColor + diffuseColor);
 }
 
 vec4 CalcDirectionalLight(vec3 Normal)
@@ -90,8 +90,7 @@ vec4 CalcPointLight(PointLight light, vec3 Normal)
 	float distance = length(LightDirection);
 	LightDirection = normalize(LightDirection);
 
-	//vec4 outColor = CalcLightInternal(light.Base, LightDirection, Normal);
-	vec4 outColor = vec4(1.0, 1.0, 0.0, 0.0);
+	vec4 outColor = CalcLightInternal(light.Base, LightDirection, Normal);
 	float attenuation = light.Atten.Constant +
 						light.Atten.Linear * distance +
 						light.Atten.Exp * distance * distance;
@@ -106,16 +105,7 @@ vec4 CalcSpotLight(SpotLight light, vec3 Normal)
 	if(SpotFactor > light.CutOffValue)
 	{
 		vec4 Color = CalcPointLight(light.Base, Normal);
-		//return Color * (1 - SpotFactor) / (1 - light.CutOffValue);
-		return vec4(0.0, 0.0, 1.0, 0.0) * (1 - SpotFactor) / (1 - light.CutOffValue);
-		//if((1 - SpotFactor) / (1 - light.CutOffValue) > 0.5)
-		//{
-		//	return vec4(0.0, 0.0, 1.0, 0.0);
-		//}
-		//else
-		//{
-		//	return vec4(1.0, 1.0, 0.0, 0.0);
-		//}
+		return Color * (SpotFactor - light.CutOffValue) / (1 - light.CutOffValue);
 	}
 	else
 	{
@@ -126,13 +116,12 @@ vec4 CalcSpotLight(SpotLight light, vec3 Normal)
 void main()
 {
 	vec3 normalizeFragNormal = normalize(fragNormal);
-	//vec4 totalLight = vec4(0.0);
 	vec4 totalLight = CalcDirectionalLight(normalizeFragNormal);
 
 	for (int i = 0; i < pointLightNums; ++i)
 	{
 		vec4 pointLightColor = CalcPointLight(pointLight[i], normalizeFragNormal);
-		//totalLight += pointLightColor;
+		totalLight += pointLightColor;
 	}
 
 	for (int i = 0; i < spotLightNums; ++i)
@@ -142,7 +131,7 @@ void main()
 	}
 	
 	// out color
-	fColor = texture(texSampler, fragTexCoord.st) * totalLight;
+	fColor = texture2D(texSampler, fragTexCoord.st) * totalLight;
 	//fColor = texture(texSampler, fragTexCoord.st);
 }
 

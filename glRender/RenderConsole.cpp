@@ -34,7 +34,7 @@ public:
 		m_dirLight.Color = Vec3(1.0f, 1.0f, 1.0f);
 		m_dirLight.AmbientIntensity = 0.15f;
 		m_dirLight.Direction = Vec4(0.0f, -1.0f, 0.0f, 0.0f);	// 平行光从天空竖直射向地面/
-		m_dirLight.DiffuseIntensity = 0.75f;
+		m_dirLight.DiffuseIntensity = 0.2f;
 	}
 	~GLrender()
 	{
@@ -68,46 +68,32 @@ public:
 
 		static float pointLightHeightParam = 0.0f;
 		pointLightHeightParam += 1.0f;
-		float pointLightZHeight = cosf(ToRadian(pointLightHeightParam)) * m_pCamera->getDistanceFactor() * 400;
-
-		PointLight lightArray[2];
+		float lightPosParam = cosf(ToRadian(pointLightHeightParam)) * m_pCamera->getDistanceFactor() * 200;
 		Point4 sceneCenterPos = Point4(m_pMesh->GetSceneCenterPos());
-		static float pointLightBaseHeight = sceneCenterPos.y;
-		sceneCenterPos.y = pointLightBaseHeight + pointLightZHeight;
-		Point4 pointLightPos = sceneCenterPos;
-		lightArray[0].PointLightPos = Point4(pointLightPos.x, pointLightPos.y, pointLightPos.z);
-		lightArray[0].Color = Vec3(1.0, 0.5, 0.0);
-		lightArray[0].AmbientIntensity = 0.8;
-		lightArray[0].DiffuseIntensity = 0.5;
-		lightArray[0].AttenuationFactor.Constant = 1.0f;
-		lightArray[0].AttenuationFactor.Linear = 0.01f;
-		lightArray[0].AttenuationFactor.Exp = 0.01f;
 
-		//pointLightPos = m_pCamera->getViewMatrix() * Point4(1.2, 0.0, 0.0, 1.0);
-		//lightArray[1].PointLightPos = Point4(pointLightPos.x, pointLightPos.y, pointLightPos.z);
-		//lightArray[1].Color = Vec3(0.0, 0.5, 1.0);
-		//lightArray[1].AmbientIntensity = 0.3;
-		//lightArray[1].DiffuseIntensity = 0.75;
-		//lightArray[1].AttenuationFactor.Constant = 1.0f;
-		//lightArray[1].AttenuationFactor.Linear = 0.1f;
-		//lightArray[1].AttenuationFactor.Exp = 0.1f;
+		PointLight pointLightArray[2];
+		static float pointLightBaseX = sceneCenterPos.x;
+		Point4 pointLightPos = Point4(pointLightBaseX + lightPosParam, sceneCenterPos.y, sceneCenterPos.z);
+		pointLightArray[0].PointLightPos = Point4(pointLightPos.x, pointLightPos.y, pointLightPos.z);
+		pointLightArray[0].Color = Vec3(0.5, 1.0, 0.0);
+		pointLightArray[0].AmbientIntensity = 0.8;
+		pointLightArray[0].DiffuseIntensity = 0.5;
+		pointLightArray[0].AttenuationFactor.Constant = 1.0f;
+		pointLightArray[0].AttenuationFactor.Linear = 1e-2f;
+		pointLightArray[0].AttenuationFactor.Exp = 1e-4f;
 
-		SpotLight sl[2];
-		sl[0].DiffuseIntensity = 0.5f;
-		sl[0].Color = Vec3(0.0f, 0.0f, 1.0f);
-		sl[0].PointLightPos = Point4(pointLightPos.x, pointLightPos.y, pointLightPos.z);
-		sl[0].Direction = Vec4(0.0, -1.0, 0.0, 0.0);
-		sl[0].AttenuationFactor.Constant = 1.0f;
-		sl[0].AttenuationFactor.Linear = 0.1f;
-		sl[0].AttenuationFactor.Exp = 0.1f;
-		sl[0].CutOffAngle = 30.0f;
-
-		sl[1].DiffuseIntensity = 0.9f;
-		sl[1].Color = Vec3(1.0f, 1.0f, 1.0f);
-		sl[1].PointLightPos = Point4(5.0f, 3.0f, 10.0f);
-		sl[1].Direction = Vec4(0.0f, -1.0f, 0.0f);
-		sl[1].AttenuationFactor.Linear = 0.1f;
-		sl[1].CutOffAngle = 20.0f;
+		SpotLight spotLightArray[2];
+		static float spotLightBaseHeight = sceneCenterPos.y;
+		Point4 spotLightPos = Point4(sceneCenterPos.x, spotLightBaseHeight + lightPosParam, sceneCenterPos.z);
+		spotLightArray[0].AmbientIntensity = 0.9f;
+		spotLightArray[0].DiffuseIntensity = 0.8f;
+		spotLightArray[0].Color = Vec3(0.0f, 0.0f, 1.0f);
+		spotLightArray[0].PointLightPos = Point4(spotLightPos.x, spotLightPos.y, spotLightPos.z);
+		spotLightArray[0].Direction = Vec4(0.0, -1.0, 0.0, 0.0);
+		spotLightArray[0].AttenuationFactor.Constant = 1.0f;
+		spotLightArray[0].AttenuationFactor.Linear = 1e-4f;
+		spotLightArray[0].AttenuationFactor.Exp = 1e-5f;
+		spotLightArray[0].CutOffAngle = 30.0f;
 
 		// 光照计算放在世界坐标下/
 		m_pGameEffect->setMVPMatrix(m_pCamera->getMVPMatrix());
@@ -117,8 +103,8 @@ public:
 		m_pGameEffect->setEyeWorldPos(m_pCamera->getEyePosition());
 		m_pGameEffect->setSpecularIntensity(specularIntensity);
 		m_pGameEffect->setSpecularPower(specularPower);
-		m_pGameEffect->setPointLightsParams(0, lightArray);
-		m_pGameEffect->setSpotLightsParams(1, sl);
+		m_pGameEffect->setPointLightsParams(1, pointLightArray);
+		m_pGameEffect->setSpotLightsParams(1, spotLightArray);
 
 		m_pMesh->Render();
 		glutSwapBuffers();
