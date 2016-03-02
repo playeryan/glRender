@@ -20,7 +20,7 @@ using namespace std;
 
 Vec4	targetVector	=	Vec4(0, 0, -1, 0);
 Vec4	upVector		=	Vec4(0, 1, 0, 0);
-float	specularIntensity = 0.3f;
+float	specularIntensity = 0.9f;
 float	specularPower = 128;
 // inherit from BaseApp
 class GLrender	: public BaseApp
@@ -73,11 +73,11 @@ public:
 
 		PointLight pointLightArray[2];
 		static float pointLightBaseX = sceneCenterPos.x;
-		Point4 pointLightPos = Point4(pointLightBaseX + lightPosParam, sceneCenterPos.y, sceneCenterPos.z);
+		Point4 pointLightPos = Point4(pointLightBaseX + lightPosParam * 2.0f, sceneCenterPos.y * 1.2f, sceneCenterPos.z);
 		pointLightArray[0].PointLightPos = Point4(pointLightPos.x, pointLightPos.y, pointLightPos.z);
 		pointLightArray[0].Color = Vec3(0.5, 1.0, 0.0);
-		pointLightArray[0].AmbientIntensity = 0.8;
-		pointLightArray[0].DiffuseIntensity = 0.5;
+		pointLightArray[0].AmbientIntensity = 0.8f;
+		pointLightArray[0].DiffuseIntensity = 0.5f;
 		pointLightArray[0].AttenuationFactor.Constant = 1.0f;
 		pointLightArray[0].AttenuationFactor.Linear = 1e-2f;
 		pointLightArray[0].AttenuationFactor.Exp = 1e-4f;
