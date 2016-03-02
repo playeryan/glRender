@@ -7,7 +7,7 @@
 #include <GL/freeglut.h>
 #include <GL/glut.h>
 #include "Camera.h"
-#include "LightTechnique.h"
+#include "ShaderObject.h"
 #include "Macros/glMacros.h"
 #include "Math/Matrix44.h"
 #include "Math/Vec4.h"

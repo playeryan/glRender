@@ -1,15 +1,20 @@
-#include "LightTechnique.h"
+#include "ShaderObject.h"
 
-char* LightTechnique::m_pVSFileName = "renderVertexShader.vert";
-char* LightTechnique::m_pFSFileName = "renderFragmentShader.frag";
-
-LightTechnique::LightTechnique()
+BaseShaderObject::BaseShaderObject(char* vs, char* fs)
+	:	m_pVSFileName(vs)
+	,	m_pFSFileName(fs)
 {}
 
-LightTechnique::~LightTechnique()
-{}
+BaseShaderObject::~BaseShaderObject()
+{
+}
 
-void LightTechnique::loadShader()
+void BaseShaderObject::Bind()
+{
+	glUseProgram(m_shaderProg);
+}
+
+void BaseShaderObject::BaseLoadShader()
 {
 	ShaderInfo shaders[] =
 	{
@@ -19,12 +24,32 @@ void LightTechnique::loadShader()
 	};
 
 	m_shaderProg = LoadShaders(shaders);
-	glUseProgram(m_shaderProg);
+}
+
+GLint BaseShaderObject::getUniformLocationInShader(const char * pUniformName)
+{
+	GLint loc = glGetUniformLocation(m_shaderProg, pUniformName);
+	printf("%s location is : %d\n", pUniformName, loc);
+	return loc;
+}
+
+LightShader::LightShader(char* vs, char* fs)
+	: BaseShaderObject(vs, fs)
+{}
+
+LightShader::~LightShader()
+{}
+
+void LightShader::Init()
+{
+	BaseShaderObject::BaseLoadShader();
 
 	m_mvpMatrixLoc = getUniformLocationInShader("mvpMatrix");
+	m_lightMVPMatrixLoc = getUniformLocationInShader("lightMVPMatrix");
 	m_modelMatrixLoc = getUniformLocationInShader("modelTransformMatrix");
 	m_normalTransformMatrixLoc = getUniformLocationInShader("normalTransformMatrix");
-	m_texSamplerLoc = getUniformLocationInShader("texSampler");
+	m_textureLoc = getUniformLocationInShader("textureUnit");
+	m_shadowMapTextureLoc = getUniformLocationInShader("shadowMapTexture");
 	m_directionLightLoc.Color = getUniformLocationInShader("dirLight.Base.Color");
 	m_directionLightLoc.AmbientIntensity = getUniformLocationInShader("dirLight.Base.AmbientIntensity");
 	m_directionLightLoc.Direction = getUniformLocationInShader("dirLight.Direction");
@@ -40,22 +65,22 @@ void LightTechnique::loadShader()
 		char name[128] = { 0 };
 		_snprintf_s(name, sizeof(name), "pointLight[%d].Base.Color", i);
 		m_pointLightLoc[i].Color = getUniformLocationInShader(name);
-
+	
 		_snprintf_s(name, sizeof(name), "pointLight[%d].Base.AmbientIntensity", i);
 		m_pointLightLoc[i].AmbientIntensity = getUniformLocationInShader(name);
-
+		
 		_snprintf_s(name, sizeof(name), "pointLight[%d].Base.DiffuseIntensity", i);
 		m_pointLightLoc[i].DiffuseIntensity = getUniformLocationInShader(name);
-
+		
 		_snprintf_s(name, sizeof(name), "pointLight[%d].Position", i);
 		m_pointLightLoc[i].Position = getUniformLocationInShader(name);
-
+		
 		_snprintf_s(name, sizeof(name), "pointLight[%d].Atten.Constant", i);
 		m_pointLightLoc[i].Atten.Constant = getUniformLocationInShader(name);
-
+		
 		_snprintf_s(name, sizeof(name), "pointLight[%d].Atten.Linear", i);
 		m_pointLightLoc[i].Atten.Linear = getUniformLocationInShader(name);
-
+		
 		_snprintf_s(name, sizeof(name), "pointLight[%d].Atten.Exp", i);
 		m_pointLightLoc[i].Atten.Exp = getUniformLocationInShader(name);
 	}
@@ -65,69 +90,64 @@ void LightTechnique::loadShader()
 		char name[128] = { 0 };
 		_snprintf_s(name, sizeof(name), "spotLight[%d].Base.Base.Color", i);
 		m_spotLightLoc[i].Color = getUniformLocationInShader(name);
-
+		
 		_snprintf_s(name, sizeof(name), "spotLight[%d].Base.Base.AmbientIntensity", i);
 		m_spotLightLoc[i].AmbientIntensity = getUniformLocationInShader(name);
-
+		
 		_snprintf_s(name, sizeof(name), "spotLight[%d].Base.Base.DiffuseIntensity", i);
 		m_spotLightLoc[i].DiffuseIntensity = getUniformLocationInShader(name);
-
+		
 		_snprintf_s(name, sizeof(name), "spotLight[%d].Base.Position", i);
 		m_spotLightLoc[i].Position = getUniformLocationInShader(name);
-
+		
 		_snprintf_s(name, sizeof(name), "spotLight[%d].Direction", i);
 		m_spotLightLoc[i].Direction = getUniformLocationInShader(name);
-
+		
 		_snprintf_s(name, sizeof(name), "spotLight[%d].CutOffValue", i);
 		m_spotLightLoc[i].CutOffValue = getUniformLocationInShader(name);
-
+		
 		_snprintf_s(name, sizeof(name), "spotLight[%d].Base.Atten.Constant", i);
 		m_spotLightLoc[i].Atten.Constant = getUniformLocationInShader(name);
-
+		
 		_snprintf_s(name, sizeof(name), "spotLight[%d].Base.Atten.Linear", i);
 		m_spotLightLoc[i].Atten.Linear = getUniformLocationInShader(name);
-
+		
 		_snprintf_s(name, sizeof(name), "spotLight[%d].Base.Atten.Exp", i);
 		m_spotLightLoc[i].Atten.Exp = getUniformLocationInShader(name);
 	}
 }
 
-GLint LightTechnique::getUniformLocationInShader(const char * pUniformName)
-{
-	GLint loc = glGetUniformLocation(m_shaderProg, pUniformName);
-	printf("%s location is : %d\n", pUniformName, loc);
-	return loc;
-}
-
-GLint LightTechnique::getProgramParam(GLint param)
-{
-	GLint result;
-	glGetProgramiv(m_shaderProg, param, &result);
-
-	return result;
-}
-
-void LightTechnique::setMVPMatrix(const Matrix44 & mvp)
+void LightShader::setMVPMatrix(const Matrix44 & mvp)
 {
 	glUniformMatrix4fv(m_mvpMatrixLoc, 1, true, mvp.m);
 }
 
-void LightTechnique::setModelMatrix(const Matrix44 & mv)
+void LightShader::setLightMVPMatrix(const Matrix44 & mvp)
+{
+	glUniformMatrix4fv(m_lightMVPMatrixLoc, 1, true, mvp.m);
+}
+
+void LightShader::setModelMatrix(const Matrix44 & mv)
 {
 	glUniformMatrix4fv(m_modelMatrixLoc, 1, true, mv.m);
 }
 
-void LightTechnique::setNormTransformMatrix(const Matrix44 & m)
+void LightShader::setNormTransformMatrix(const Matrix44 & m)
 {
 	glUniformMatrix4fv(m_normalTransformMatrixLoc, 1, true, m.m);
 }
 
-void LightTechnique::setTextureSampler(unsigned int TextureUnit)
+void LightShader::setTextureUnit(unsigned int TextureUnit)
 {
-	glUniform1i(m_texSamplerLoc, TextureUnit);
+	glUniform1i(m_textureLoc, TextureUnit);
 }
 
-void LightTechnique::setDirLightParams(DirectionalLight & light)
+void LightShader::setShadowMapTexUnit(unsigned int TextureUnit)
+{
+	glUniform1i(m_shadowMapTextureLoc, TextureUnit);
+}
+
+void LightShader::setDirLightParams(DirectionalLight & light)
 {
 	glUniform3f(m_directionLightLoc.Color, light.Color.x, light.Color.y, light.Color.z);
 	glUniform1f(m_directionLightLoc.AmbientIntensity, light.AmbientIntensity);
@@ -138,22 +158,22 @@ void LightTechnique::setDirLightParams(DirectionalLight & light)
 	glUniform1f(m_directionLightLoc.DiffuseIntensity, light.DiffuseIntensity);
 }
 
-void LightTechnique::setEyeWorldPos(Point4 position)
+void LightShader::setEyeWorldPos(Point4 position)
 {
 	glUniform3f(m_eyeWorldPosLoc, position.x, position.y, position.z);
 }
 
-void LightTechnique::setSpecularIntensity(float intensity)
+void LightShader::setSpecularIntensity(float intensity)
 {
 	glUniform1f(m_specularIntensityLoc, intensity);
 }
 
-void LightTechnique::setSpecularPower(float power)
+void LightShader::setSpecularPower(float power)
 {
 	glUniform1f(m_specularPowerLoc, power);
 }
 
-void LightTechnique::setPointLightsParams(unsigned int numLights, const PointLight* pLights)
+void LightShader::setPointLightsParams(unsigned int numLights, const PointLight* pLights)
 {
 	glUniform1i(m_numsPointLightLoc, numLights);
 
@@ -169,7 +189,7 @@ void LightTechnique::setPointLightsParams(unsigned int numLights, const PointLig
 	}
 }
 
-void LightTechnique::setSpotLightsParams(unsigned int NumLights, const SpotLight * pLights)
+void LightShader::setSpotLightsParams(unsigned int NumLights, const SpotLight * pLights)
 {
 	glUniform1i(m_numsSpotLightLoc, NumLights);
 
@@ -188,4 +208,28 @@ void LightTechnique::setSpotLightsParams(unsigned int NumLights, const SpotLight
 		glUniform1f(m_spotLightLoc[i].Atten.Linear, pLights[i].AttenuationFactor.Linear);
 		glUniform1f(m_spotLightLoc[i].Atten.Exp, pLights[i].AttenuationFactor.Exp);
 	}
+}
+
+ShadowMapShader::ShadowMapShader(char* vs, char* fs)
+	:	BaseShaderObject(vs, fs)
+{}
+
+ShadowMapShader::~ShadowMapShader()
+{}
+
+void ShadowMapShader::Init()
+{
+	BaseShaderObject::BaseLoadShader();
+	m_mvpMatrixLoc = getUniformLocationInShader("mvpMatrix");
+	m_shadowMapTexLoc = getUniformLocationInShader("shadowMapTexture");
+}
+
+void ShadowMapShader::setMVPMatrix(const Matrix44 & mvp)
+{
+	glUniformMatrix4fv(m_mvpMatrixLoc, 1, true, mvp.m);
+}
+
+void ShadowMapShader::setTextureUnit(unsigned int textureUnit)
+{
+	glUniform1i(m_shadowMapTexLoc, textureUnit);
 }

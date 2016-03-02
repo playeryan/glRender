@@ -10,7 +10,8 @@
 #include "Model\Bitmap.h"
 #include "Common\Texture.h"
 #include "Common\BaseApp.h"
-#include "Common\LightTechnique.h"
+#include "Common\ShaderObject.h"
+#include "Common\FrameBufferObject.h"
 #include "Common\Light.h"
 #include "Model\Mesh.h"
 
@@ -18,17 +19,23 @@
 
 using namespace std; 
 
-Vec4	targetVector	=	Vec4(0, 0, -1, 0);
-Vec4	upVector		=	Vec4(0, 1, 0, 0);
-float	specularIntensity = 0.9f;
-float	specularPower = 128;
+Vec4	targetVector		=	Vec4(0, 0, -1, 0);
+Vec4	upVector			=	Vec4(0, 1, 0, 0);
+float	specularIntensity	=	0.9f;
+float	specularPower		=	128;
+char*	pLightVSFileName	=	"renderVertexShader.vert";
+char*	pLightFSFileName	=	"renderFragmentShader.frag";
+char*	pShadowVSFileName	=	"shadowMapVertexShader.vert";
+char*	pShadowFSFileName	=	"shadowMapFragmentShader.frag";
+
 // inherit from BaseApp
 class GLrender	: public BaseApp
 {
 public:
 	GLrender(const char* name)
 		:	BaseApp(name)
-		,	m_pGameEffect(NULL)
+		,	m_pGameLightEffect(NULL)
+		,	m_pGameShadowEffect(NULL)
 		,	m_pMesh(NULL)
 	{
 		m_dirLight.Color = Vec3(1.0f, 1.0f, 1.0f);
@@ -38,15 +45,26 @@ public:
 	}
 	~GLrender()
 	{
-		SAFE_DELETE_POINTER(m_pGameEffect);
+		SAFE_DELETE_POINTER(m_pGameLightEffect);
+		SAFE_DELETE_POINTER(m_pGameShadowEffect);
 		SAFE_DELETE_POINTER(m_pMesh);
 	}
 
 	bool init() override
 	{
-		m_pGameEffect = new LightTechnique();
-		m_pGameEffect->loadShader();
-		m_pGameEffect->setTextureSampler(0);
+		m_pGameLightEffect = new LightShader(pLightVSFileName, pLightFSFileName);
+		m_pGameLightEffect->Init();
+		m_pGameLightEffect->Bind();
+		m_pGameLightEffect->setTextureUnit(0);
+		m_pGameLightEffect->setShadowMapTexUnit(1);
+
+		m_pGameShadowEffect = new ShadowMapShader(pShadowVSFileName, pShadowFSFileName);
+		m_pGameShadowEffect->Init();
+		
+		//if (!m_shadowMapFBO.Init(WINDOW_WIDTH, WINDOW_HEIGHT))
+		//{
+		//	return false;
+		//}
 
 		m_pMesh = new Mesh();
 		// 加载不同的模型文件/
@@ -64,7 +82,21 @@ public:
 	}
 	void display() override
 	{
+		ShadowMapProcessing();
+		RenderProcessing();
+		fpsCalculate();
+	}
+	void ShadowMapProcessing()
+	{
+		//m_shadowMapFBO.BindForWriting();
+		//glClear(GL_DEPTH_BUFFER_BIT);
+		//m_pGameShadowEffect->Bind();
+	}
+	void RenderProcessing()
+	{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		m_pGameLightEffect->Bind();
 
 		static float pointLightHeightParam = 0.0f;
 		pointLightHeightParam += 1.0f;
@@ -96,24 +128,25 @@ public:
 		spotLightArray[0].CutOffAngle = 30.0f;
 
 		// 光照计算放在世界坐标下/
-		m_pGameEffect->setMVPMatrix(m_pCamera->getMVPMatrix());
-		m_pGameEffect->setModelMatrix(m_pCamera->getModelMatrix());
-		m_pGameEffect->setNormTransformMatrix(m_pCamera->getNormTransformMatrix());
-		m_pGameEffect->setDirLightParams(m_dirLight);
-		m_pGameEffect->setEyeWorldPos(m_pCamera->getEyePosition());
-		m_pGameEffect->setSpecularIntensity(specularIntensity);
-		m_pGameEffect->setSpecularPower(specularPower);
-		m_pGameEffect->setPointLightsParams(1, pointLightArray);
-		m_pGameEffect->setSpotLightsParams(1, spotLightArray);
+		m_pGameLightEffect->setMVPMatrix(m_pCamera->getMVPMatrix());
+		m_pGameLightEffect->setModelMatrix(m_pCamera->getModelMatrix());
+		m_pGameLightEffect->setNormTransformMatrix(m_pCamera->getNormTransformMatrix());
+		m_pGameLightEffect->setDirLightParams(m_dirLight);
+		m_pGameLightEffect->setEyeWorldPos(m_pCamera->getEyePosition());
+		m_pGameLightEffect->setSpecularIntensity(specularIntensity);
+		m_pGameLightEffect->setSpecularPower(specularPower);
+		m_pGameLightEffect->setPointLightsParams(1, pointLightArray);
+		m_pGameLightEffect->setSpotLightsParams(1, spotLightArray);
 
 		m_pMesh->Render();
 		glutSwapBuffers();
-		fpsCalculate();
 	}
 private:
-	LightTechnique*		m_pGameEffect;
-	DirectionalLight	m_dirLight;
+	LightShader*		m_pGameLightEffect;
+	ShadowMapShader*	m_pGameShadowEffect;
 	Mesh*				m_pMesh;
+	DirectionalLight	m_dirLight;
+	ShadowMapFBO		m_shadowMapFBO;
 };
 
 //---------------------------------------------------------------------

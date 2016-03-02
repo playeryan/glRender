@@ -13,41 +13,57 @@
 #define MAX_POINT_LIGHT_NUMS 2
 #define MAX_SPOT_LIGHT_NUMS 2
 
-class LightTechnique
+/****************************BaseShaderObject***********************************/
+class BaseShaderObject
 {
 public:
-	LightTechnique();
-	~LightTechnique();
+	BaseShaderObject(char* vs, char* fs);
+	virtual ~BaseShaderObject();
 
-	void loadShader();
-
+	virtual void Init() = 0;	// 子类在Init()中应获取所需uniform值的位置/
+	void Bind();
+protected:
+	void BaseLoadShader();		// 子类应在其Init()调用BaseLoadShader()/
 	GLint getUniformLocationInShader(const char* pUniformName);
+private:
+	GLuint m_shaderProg;
+	char* m_pVSFileName;
+	char* m_pFSFileName;
+};
 
-	GLint getProgramParam(GLint param);
+/**********************LightShader, inherit BaseShaderObject******************/
+class LightShader : public BaseShaderObject
+{
+public:
+	LightShader(char* vs, char* fs);
+	~LightShader();
+
+	virtual void Init();
 
 	void setMVPMatrix(const Matrix44& mvp);
+	void setLightMVPMatrix(const Matrix44& mvp);
 	void setModelMatrix(const Matrix44& mv);
 	void setNormTransformMatrix(const Matrix44& m);
-	void setTextureSampler(unsigned int TextureUnit);
+	void setTextureUnit(unsigned int TextureUnit);
+	void setShadowMapTexUnit(unsigned int TextureUnit);
 	void setDirLightParams(DirectionalLight& light);
 	void setEyeWorldPos(Point4 position);
 	void setSpecularIntensity(float intensity);
 	void setSpecularPower(float power);
 	void setPointLightsParams(unsigned int NumLights, const PointLight* pLights);
 	void setSpotLightsParams(unsigned int NumLights, const SpotLight* pLights);
-
 private:
-	GLuint m_shaderProg;
 	GLuint m_mvpMatrixLoc;
+	GLuint m_lightMVPMatrixLoc;
 	GLuint m_modelMatrixLoc;
 	GLuint m_normalTransformMatrixLoc;
-	GLuint m_texSamplerLoc;
+	GLuint m_textureLoc;
+	GLuint m_shadowMapTextureLoc;
 	GLuint m_eyeWorldPosLoc;
 	GLuint m_specularIntensityLoc;
 	GLuint m_specularPowerLoc;
 	GLuint m_numsPointLightLoc;
 	GLuint m_numsSpotLightLoc;
-	
 
 	struct dirLightLoc
 	{
@@ -86,11 +102,22 @@ private:
 			GLuint Exp;
 		} Atten;
 	} m_spotLightLoc[MAX_SPOT_LIGHT_NUMS];
-
-	static char* m_pVSFileName;
-	static char* m_pFSFileName;
 };
 
+/********************ShadowMapShader, inherit BaseShaderObject**********************/
+class ShadowMapShader : public BaseShaderObject
+{
+public:
+	ShadowMapShader(char* vs, char* fs);
+	~ShadowMapShader();
+
+	virtual void Init();
+	void setMVPMatrix(const Matrix44& mvp);
+	void setTextureUnit(unsigned int textureUnit);
+private:
+	GLuint m_mvpMatrixLoc;	// 用于光源坐标变换的uniform矩阵/
+	GLuint m_shadowMapTexLoc;
+};
 
 #endif // !LIGHTTECHNIQUE_H
 
