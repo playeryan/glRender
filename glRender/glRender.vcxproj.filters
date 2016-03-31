@@ -51,13 +51,19 @@
     <ClCompile Include="Common\BaseApp.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Common\LightTechnique.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="Common\Light.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Model\Mesh.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\ShaderObject.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\FrameBufferObject.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\GeometryBufferObject.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -219,6 +225,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Model\Mesh.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\ShaderObject.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\FrameBufferObject.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\GeometryBufferObject.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

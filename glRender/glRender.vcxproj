@@ -152,8 +152,10 @@
   <ItemGroup>
     <ClCompile Include="Common\BaseApp.cpp" />
     <ClCompile Include="Common\Camera.cpp" />
+    <ClCompile Include="Common\FrameBufferObject.cpp" />
+    <ClCompile Include="Common\GeometryBufferObject.cpp" />
     <ClCompile Include="Common\Light.cpp" />
-    <ClCompile Include="Common\LightTechnique.cpp" />
+    <ClCompile Include="Common\ShaderObject.cpp" />
     <ClCompile Include="Common\Texture.cpp" />
     <ClCompile Include="Math\Matrix44.cpp" />
     <ClCompile Include="Math\Quaternion.cpp" />
@@ -169,8 +171,11 @@
   <ItemGroup>
     <ClInclude Include="Common\BaseApp.h" />
     <ClInclude Include="Common\Camera.h" />
+    <ClInclude Include="Common\FrameBufferObject.h" />
+    <ClInclude Include="Common\GeometryBufferObject.h" />
     <ClInclude Include="Common\Light.h" />
     <ClInclude Include="Common\LightTechnique.h" />
+    <ClInclude Include="Common\ShaderObject.h" />
     <ClInclude Include="Common\Texture.h" />
     <ClInclude Include="Common\ThirdParty\assimp\include\assimp\ai_assert.h" />
     <ClInclude Include="Common\ThirdParty\assimp\include\assimp\anim.h" />
