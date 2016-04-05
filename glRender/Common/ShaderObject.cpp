@@ -1,6 +1,6 @@
 #include "ShaderObject.h"
 
-BaseShaderObject::BaseShaderObject(char* vs, char* fs)
+BaseShaderObject::BaseShaderObject(const char* vs, const char* fs)
 	:	m_pVSFileName(vs)
 	,	m_pFSFileName(fs)
 {}
@@ -33,7 +33,7 @@ GLint BaseShaderObject::getUniformLocationInShader(const char * pUniformName)
 	return loc;
 }
 
-LightShader::LightShader(char* vs, char* fs)
+LightShader::LightShader(const char* vs, const char* fs)
 	: BaseShaderObject(vs, fs)
 {}
 
@@ -210,7 +210,7 @@ void LightShader::setSpotLightsParams(unsigned int NumLights, const SpotLight * 
 	}
 }
 
-ShadowMapShader::ShadowMapShader(char* vs, char* fs)
+ShadowMapShader::ShadowMapShader(const char* vs, const char* fs)
 	:	BaseShaderObject(vs, fs)
 {}
 

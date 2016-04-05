@@ -67,6 +67,7 @@ private:
 		void Init(const std::vector<VertexAttribute>& Vertices,
 				  const std::vector<unsigned int>& Indices);
 
+		GLuint m_VertexArray;
 		GLuint m_VertexBuffer;
 		GLuint m_IndexBuffer;
 		unsigned int m_NumIndices;

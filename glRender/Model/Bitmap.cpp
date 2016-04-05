@@ -26,11 +26,8 @@ Bitmap::~Bitmap()
 
 Bitmap* Bitmap::bitmapFromFile(std::string filePath)
 {
-	printf("bit map from file: %s, start\n", filePath.c_str());
 	int width, height, channels;
-	printf("before stbi load file: %s\n", filePath.c_str());
 	unsigned char* pixels = stbi_load(filePath.c_str(), &width, &height, &channels, 0);
-	printf("after stbi load file: %s\n", filePath.c_str());
 	if (!pixels)
 	{
 		printf("file: %s, parse pixels failed\n", filePath);

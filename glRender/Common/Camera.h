@@ -2,6 +2,7 @@
 #ifndef CAMERA_H
 #define	CAMERA_H
 
+#include <GLFW\glfw3.h>
 #include "../Math/Matrix44.h"
 #include "../Math/Vec3.h"
 
@@ -12,36 +13,37 @@ public:
 	~Camera();
 
 	void setCamera(Point4 eye, Vec4 target, Vec4 up);
+	void setWorldPos(Point4 pos);
+	void setScale(Vec3 factor);
 	void setProjectionMatrix(float fov, float ratio, float nearClip, float farClip);
+	void recoverModelTransform();
 	Matrix44 getMVPMatrix();
 	Matrix44 getModelMatrix();
 	Matrix44 getViewMatrix();
 	Matrix44 getNormTransformMatrix();
-	void onKeyBoard(unsigned char key);
-	void onMouseMotion(int x, int y);
-	void setMousePosition(int x, int y);
+	void onKeyBoard(int key, float deltaTime); // deltaTime参数使得不同帧数下，相机移动速度保持固定/
+	void onMouseMotion(double x, double y);
+	void setMousePosition(double x, double y);
 	Point4 getEyePosition();
 	Vec4 getLookingDirection();
 
 	inline void setDistanceFactor(float factor)
 	{
-		m_distanceFactor = factor > 0.0f ? factor : -factor;
+		m_distanceFactor = factor;
 		printf("Camera distance factor: %f\n", m_distanceFactor);
-	}
-	inline float getDistanceFactor() 
-	{
-		return m_distanceFactor;
 	}
 
 public:
 	int			m_windowWidth;
 	int			m_windowHeight;
 	Point4		m_eyePosition;
+	Point4		m_worldPos;
+	Vec3		m_scale;
 	//右手坐标系，实际坐标系正向向量nVector与targetVector反向
 	Vec4		m_nVector;
 	Vec4		m_upVector;
-	int			m_mouseX;
-	int			m_mouseY;
+	double		m_mouseX;
+	double		m_mouseY;
 	Matrix44	m_projMatrix;
 	float		m_distanceFactor;
 };

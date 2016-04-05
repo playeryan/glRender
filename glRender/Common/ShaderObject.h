@@ -4,8 +4,6 @@
 
 #include <string>
 #include <GL/glew.h>
-#include <GL/freeglut.h>
-#include <GL/glut.h>
 #include "Tools/LoadShaders.h"
 #include "Math/Matrix44.h"
 #include "Light.h"
@@ -17,7 +15,7 @@
 class BaseShaderObject
 {
 public:
-	BaseShaderObject(char* vs, char* fs);
+	BaseShaderObject(const char* vs, const char* fs);
 	virtual ~BaseShaderObject();
 
 	virtual void Init() = 0;	// 子类在Init()中应获取所需uniform值的位置/
@@ -27,15 +25,15 @@ protected:
 	GLint getUniformLocationInShader(const char* pUniformName);
 private:
 	GLuint m_shaderProg;
-	char* m_pVSFileName;
-	char* m_pFSFileName;
+	const char* m_pVSFileName;
+	const char* m_pFSFileName;
 };
 
 /**********************LightShader, inherit BaseShaderObject******************/
 class LightShader : public BaseShaderObject
 {
 public:
-	LightShader(char* vs, char* fs);
+	LightShader(const char* vs, const char* fs);
 	~LightShader();
 
 	virtual void Init();
@@ -108,7 +106,7 @@ private:
 class ShadowMapShader : public BaseShaderObject
 {
 public:
-	ShadowMapShader(char* vs, char* fs);
+	ShadowMapShader(const char* vs, const char* fs);
 	~ShadowMapShader();
 
 	virtual void Init();

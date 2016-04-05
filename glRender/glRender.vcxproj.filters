@@ -236,6 +236,9 @@
     <ClInclude Include="Common\GeometryBufferObject.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="ShaderFiles\ShaderFiles.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Common\ThirdParty\assimp\include\assimp\color4.inl">
@@ -262,6 +265,20 @@
     <None Include="Assimp32.dll" />
     <None Include="renderVertexShader.vert" />
     <None Include="renderFragmentShader.frag" />
+    <None Include="ShaderFiles\shadowMapVertexShader.vert" />
+    <None Include="ShaderFiles\spotLightFragmentShader.frag" />
+    <None Include="ShaderFiles\spotLightVertexShader.vert" />
+    <None Include="ShaderFiles\shadowMapFragmentShader.frag" />
+    <None Include="ShaderFiles\directionalLightFragmentShader.frag" />
+    <None Include="ShaderFiles\directionalLightVertexShader.vert" />
+    <None Include="ShaderFiles\GeometryBufferFragmentShader.frag" />
+    <None Include="ShaderFiles\GeometryBufferVertexShader.vert" />
+    <None Include="ShaderFiles\NoneFragmentShader.frag" />
+    <None Include="ShaderFiles\NoneVertexShader.vert" />
+    <None Include="ShaderFiles\pointLightFragmentShader.frag" />
+    <None Include="ShaderFiles\pointLightVertexShader.vert" />
+    <None Include="ShaderFiles\renderFragmentShader.frag" />
+    <None Include="ShaderFiles\renderVertexShader.vert" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="assimp.lib" />

@@ -2,10 +2,10 @@
 #ifndef BASEAPP_H
 #define BASEAPP_H
 
+#include <vector>
 #include <string>
 #include <GL/glew.h>
-#include <GL/freeglut.h>
-#include <GL/glut.h>
+#include <GLFW\glfw3.h>
 #include "Camera.h"
 #include "ShaderObject.h"
 #include "Macros/glMacros.h"
@@ -25,29 +25,29 @@ public:
 	virtual void appMain(int argc, char** argv, BaseApp* appImplement);
 
 	void fpsCalculate();
-	void changeWindowSize(int w, int h);
-	void keyboardFunc(unsigned char key, int x, int y);
-	void mouseFunc(int button, int state, int x, int y);
-	void motionFunc(int x, int y);
+	void movementEventPoll();
+	void keyboardFunc(int key);
+	void mouseFunc(double x, double y);
+	void mouseButtonFunc(double x, double y);
 
-// class member region start
+	// class member region start
 public:
-	Camera*			m_pCamera;
+	Camera*				m_pCamera;
+	std::vector<bool>	m_keyState;
+	float				m_deltaTime;
 private:
-	float			m_lastTime;
-	float			m_elapsedTime;
-	unsigned int	m_frameCount;
-	float			m_FPS;
-	std::string		m_appName;
-// class member region end
+	float				m_lastTime;
+	float				m_elapsedTime;
+	unsigned int		m_frameCount;
+	float				m_FPS;
+	std::string			m_appName;
+	// class member region end
 };
 
 static void instantiateAppDelegate(BaseApp* appImplement);
-static void changeSize(int w, int h);
-static void render();
-static void keyboardCallback(unsigned char key, int x, int y);
-static void mouseCallback(int button, int state, int x, int y);
-static void motionCallback(int x, int y);
+static void keyboardCallback(GLFWwindow* window, int key, int scanCode, int action, int mode);
+static void mouseCallback(GLFWwindow* window, double x, double y);
+static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mode);
 
 #endif // !BASEAPP_H
 

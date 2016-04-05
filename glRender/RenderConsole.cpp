@@ -1,9 +1,8 @@
 #include <iostream>
+#include <cstdio>
 #include <windows.h>
 #include <math.h>
 #include <GL/glew.h>
-#include <GL/freeglut.h>
-#include <GL/glut.h>
 #include "Macros/glMacros.h"
 #include "Math\MathMacros.h"
 #include "Math\Vec4.h"
@@ -12,10 +11,10 @@
 #include "Common\BaseApp.h"
 #include "Common\ShaderObject.h"
 #include "Common\FrameBufferObject.h"
+#include "Common\GeometryBufferObject.h"
 #include "Common\Light.h"
 #include "Model\Mesh.h"
-
-#pragma comment (lib, "assimp.lib")
+#include "ShaderFiles\ShaderFiles.h"
 
 using namespace std; 
 
@@ -23,10 +22,6 @@ Vec4	targetVector		=	Vec4(0, 0, -1, 0);
 Vec4	upVector			=	Vec4(0, 1, 0, 0);
 float	specularIntensity	=	0.9f;
 float	specularPower		=	128;
-char*	pLightVSFileName	=	"renderVertexShader.vert";
-char*	pLightFSFileName	=	"renderFragmentShader.frag";
-char*	pShadowVSFileName	=	"shadowMapVertexShader.vert";
-char*	pShadowFSFileName	=	"shadowMapFragmentShader.frag";
 
 // inherit from BaseApp
 class GLrender	: public BaseApp
@@ -52,14 +47,14 @@ public:
 
 	bool init() override
 	{
-		m_pGameLightEffect = new LightShader(pLightVSFileName, pLightFSFileName);
+		m_pGameLightEffect = new LightShader(LightVSFileName.c_str(), LightFSFileName.c_str());
 		m_pGameLightEffect->Init();
 		m_pGameLightEffect->Bind();
 		m_pGameLightEffect->setTextureUnit(0);
 		m_pGameLightEffect->setShadowMapTexUnit(1);
 
-		m_pGameShadowEffect = new ShadowMapShader(pShadowVSFileName, pShadowFSFileName);
-		m_pGameShadowEffect->Init();
+		//m_pGameShadowEffect = new ShadowMapShader(pShadowVSFileName, pShadowFSFileName);
+		//m_pGameShadowEffect->Init();
 		
 		//if (!m_shadowMapFBO.Init(WINDOW_WIDTH, WINDOW_HEIGHT))
 		//{
@@ -82,9 +77,15 @@ public:
 	}
 	void display() override
 	{
-		ShadowMapProcessing();
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glFrontFace(GL_CCW);
+		glCullFace(GL_BACK);
+		glEnable(GL_MULTISAMPLE);
+		glEnable(GL_DEPTH_TEST);
+
 		RenderProcessing();
-		fpsCalculate();
 	}
 	void ShadowMapProcessing()
 	{
@@ -98,9 +99,10 @@ public:
 
 		m_pGameLightEffect->Bind();
 
+		static float pointLightMoveSpeed = 150.0f;
 		static float pointLightHeightParam = 0.0f;
-		pointLightHeightParam += 1.0f;
-		float lightPosParam = cosf(ToRadian(pointLightHeightParam)) * m_pCamera->getDistanceFactor() * 200;
+		pointLightHeightParam += pointLightMoveSpeed * m_deltaTime;	// 使得移动速度不受帧数影响/
+		float lightPosParam = cosf(ToRadian(pointLightHeightParam)) * m_pMesh->getSuitableDistanceFactor();
 		Point4 sceneCenterPos = Point4(m_pMesh->GetSceneCenterPos());
 
 		PointLight pointLightArray[2];
@@ -139,7 +141,6 @@ public:
 		m_pGameLightEffect->setSpotLightsParams(1, spotLightArray);
 
 		m_pMesh->Render();
-		glutSwapBuffers();
 	}
 private:
 	LightShader*		m_pGameLightEffect;

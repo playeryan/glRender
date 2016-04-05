@@ -95,7 +95,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;glew32s.lib;glfw3.lib;assimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -128,7 +128,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;glew32s.lib;glfw3.lib;assimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -224,6 +224,7 @@
     <ClInclude Include="Model\Mesh.h" />
     <ClInclude Include="Model\MyTGA.h" />
     <ClInclude Include="Model\ObjModel.h" />
+    <ClInclude Include="ShaderFiles\ShaderFiles.h" />
     <ClInclude Include="Tools\LoadShaders.h" />
   </ItemGroup>
   <ItemGroup>
@@ -237,6 +238,20 @@
     <None Include="Common\ThirdParty\assimp\include\assimp\vector3.inl" />
     <None Include="renderFragmentShader.frag" />
     <None Include="renderVertexShader.vert" />
+    <None Include="ShaderFiles\directionalLightFragmentShader.frag" />
+    <None Include="ShaderFiles\directionalLightVertexShader.vert" />
+    <None Include="ShaderFiles\GeometryBufferFragmentShader.frag" />
+    <None Include="ShaderFiles\GeometryBufferVertexShader.vert" />
+    <None Include="ShaderFiles\NoneFragmentShader.frag" />
+    <None Include="ShaderFiles\NoneVertexShader.vert" />
+    <None Include="ShaderFiles\pointLightFragmentShader.frag" />
+    <None Include="ShaderFiles\pointLightVertexShader.vert" />
+    <None Include="ShaderFiles\renderFragmentShader.frag" />
+    <None Include="ShaderFiles\renderVertexShader.vert" />
+    <None Include="ShaderFiles\shadowMapFragmentShader.frag" />
+    <None Include="ShaderFiles\shadowMapVertexShader.vert" />
+    <None Include="ShaderFiles\spotLightFragmentShader.frag" />
+    <None Include="ShaderFiles\spotLightVertexShader.vert" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="assimp.lib" />

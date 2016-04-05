@@ -6,12 +6,18 @@ static BaseApp* appDelegate = NULL;
 
 BaseApp::BaseApp(const char* name)
 	: m_pCamera(NULL)
+	, m_deltaTime(0.0)
 	, m_lastTime(0.0)
-	, m_elapsedTime(0.0)
+	, m_elapsedTime(0.0f)
 	, m_frameCount(0)
 	, m_FPS(0.0)
 	, m_appName(name)
-{}
+{
+	for (size_t i = 0; i < 1024; i++)
+	{
+		m_keyState.push_back(false);
+	}
+}
 
 BaseApp::~BaseApp()
 {
@@ -20,16 +26,17 @@ BaseApp::~BaseApp()
 
 void BaseApp::appMain(int argc, char** argv, BaseApp* appImplement)
 {
-	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_MULTISAMPLE);
-	glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
-	glutInitContextProfile(GLUT_CORE_PROFILE);
-	glutCreateWindow(m_appName.c_str());
-	if (glewInit())
-	{
-		cerr << "Unable to initialize GLEW ... exiting" << endl;
-		exit(EXIT_FAILURE);
-	}
+	glfwInit();
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+
+	GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, m_appName.c_str(), nullptr, nullptr);
+	glfwMakeContextCurrent(window);
+
+	glewExperimental = GL_TRUE;
+	glewInit();
 	// print out some info about the graphics drivers
 	std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
 	std::cout << "GLSL version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
@@ -39,41 +46,47 @@ void BaseApp::appMain(int argc, char** argv, BaseApp* appImplement)
 
 	m_pCamera = new Camera(WINDOW_WIDTH, WINDOW_HEIGHT);
 
-	m_lastTime = (float)timeGetTime();
-
 	instantiateAppDelegate(appImplement);
+	glfwSetKeyCallback(window, keyboardCallback);
+	glfwSetCursorPosCallback(window, mouseCallback);
+	glfwSetMouseButtonCallback(window, mouseButtonCallback);
+
+	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+
 	if (!init())
 	{
 		return;
 	}
 
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	glFrontFace(GL_CCW);
-	glCullFace(GL_BACK);
-	glEnable(GL_MULTISAMPLE);
-	glEnable(GL_DEPTH_TEST);
+	//// render loop
+	m_lastTime = glfwGetTime();
+	while (!glfwWindowShouldClose(window))
+	{
+		float currentTime = glfwGetTime();
+		m_deltaTime = currentTime - m_lastTime;
+		m_lastTime = currentTime;
 
-	glutReshapeFunc(changeSize);
-	glutDisplayFunc(render);
-	glutIdleFunc(render);
-	glutKeyboardFunc(keyboardCallback);
-	glutMouseFunc(mouseCallback);
-	glutMotionFunc(motionCallback);
-	glutMainLoop();
+		glfwPollEvents();
+		movementEventPoll();
+		display();
+		fpsCalculate();
+		glfwSwapBuffers(window);
+	}
+	glfwTerminate();
+
+	return;
 }
 
 void BaseApp::fpsCalculate()
 {
 	m_frameCount++;
-	float currentTime = (float)timeGetTime();	// 结果为毫秒/
-	float timeDelta = (currentTime - m_lastTime) * 0.001f;
-	m_elapsedTime += timeDelta;
+	m_elapsedTime += m_deltaTime;
 	// 检测是否完整度过1秒钟
 	char fpsChar[20] = { 0 };
 	if (m_elapsedTime >= 1.0f)
 	{
 		// 计算帧率
-		m_FPS = (float)m_frameCount / m_elapsedTime;
+		m_FPS = m_frameCount / m_elapsedTime;
 		// 写入帧率
 		sprintf(fpsChar, "%f", m_FPS);
 		std::string fpsString(fpsChar);
@@ -83,28 +96,32 @@ void BaseApp::fpsCalculate()
 		m_elapsedTime = 0.0f;
 		m_frameCount = 0;
 	}
-	m_lastTime = currentTime;	
 }
 
-void BaseApp::changeWindowSize(int w, int h)
+void BaseApp::movementEventPoll()
 {
-	glViewport(0, 0, w, h);
+	keyboardFunc(GLFW_KEY_W);
+	keyboardFunc(GLFW_KEY_A);
+	keyboardFunc(GLFW_KEY_S);
+	keyboardFunc(GLFW_KEY_D);
+	keyboardFunc(GLFW_KEY_I);
+	keyboardFunc(GLFW_KEY_K);
 }
 
-void BaseApp::keyboardFunc(unsigned char key, int x, int y)
+void BaseApp::keyboardFunc(int key)
 {
-	m_pCamera->onKeyBoard(key);
-}
-
-void BaseApp::mouseFunc(int button, int state, int x, int y)
-{
-	if (state == GLUT_DOWN)
+	if (m_keyState[key])
 	{
-		m_pCamera->setMousePosition(x, y);
+		m_pCamera->onKeyBoard(key, m_deltaTime);
 	}
 }
 
-void BaseApp::motionFunc(int x, int y)
+void BaseApp::mouseFunc(double x, double y)
+{
+	m_pCamera->setMousePosition(x, y);
+}
+
+void BaseApp::mouseButtonFunc(double x, double y)
 {
 	m_pCamera->onMouseMotion(x, y);
 }
@@ -114,27 +131,42 @@ void instantiateAppDelegate(BaseApp* appImplement)
 	appDelegate = appImplement;
 }
 
-void changeSize(int w, int h)
+void keyboardCallback(GLFWwindow* window, int key, int scanCode, int action, int mode)
 {
-	appDelegate->changeWindowSize(w, h);
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+	{
+		glfwSetWindowShouldClose(window, GL_TRUE);
+		return;
+	}
+
+	if (action == GLFW_PRESS)
+	{
+		appDelegate->m_keyState[key] = true;
+	}
+	else if (action == GLFW_RELEASE)
+	{
+		appDelegate->m_keyState[key] = false;
+	}
 }
 
-void render()
+void mouseCallback(GLFWwindow* window, double x, double y)
 {
-	appDelegate->display();
+	// 按住鼠标右键时才控制相机/
+	int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
+	if (state == GLFW_PRESS)
+	{
+		appDelegate->mouseButtonFunc(x, y);
+	}
 }
 
-void keyboardCallback(unsigned char key, int x, int y)
+void mouseButtonCallback(GLFWwindow* window, int button, int action, int mode)
 {
-	appDelegate->keyboardFunc(key, x, y);
-}
+	int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
+	if (button == GLFW_MOUSE_BUTTON_RIGHT && state == GLFW_PRESS)
+	{
+		double x = 0.0, y = 0.0;
+		glfwGetCursorPos(window, &x, &y);
 
-void mouseCallback(int button, int state, int x, int y)
-{
-	appDelegate->mouseFunc(button, state, x, y);
-}
-
-void motionCallback(int x, int y)
-{
-	appDelegate->motionFunc(x, y);
+		appDelegate->mouseFunc(x, y);
+	}
 }

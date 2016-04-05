@@ -1,7 +1,8 @@
 #include "mesh.h"
 
 Mesh::MeshEntry::MeshEntry()
-	:	m_VertexBuffer(INVALID_GLRENDER_VALUE)
+	:	m_VertexArray(INVALID_GLRENDER_VALUE)
+	,	m_VertexBuffer(INVALID_GLRENDER_VALUE)
 	,	m_IndexBuffer(INVALID_GLRENDER_VALUE)
 	,	m_NumIndices(0)
 	,	m_MaterialIndex(INVALID_MATERIAL)
@@ -9,6 +10,10 @@ Mesh::MeshEntry::MeshEntry()
 
 Mesh::MeshEntry::~MeshEntry()
 {
+	if (m_VertexArray != INVALID_GLRENDER_VALUE)
+	{
+		glDeleteVertexArrays(1, &m_VertexArray);
+	}
 	if (m_VertexBuffer != INVALID_GLRENDER_VALUE)
 	{
 		glDeleteBuffers(1, &m_VertexBuffer);
@@ -58,18 +63,8 @@ bool Mesh::LoadMesh(const std::string & fileName)
 
 void Mesh::Render()
 {
-	glEnableVertexAttribArray(vPosition);
-	glEnableVertexAttribArray(vTexCooord);
-	glEnableVertexAttribArray(vNormal);
 	for (size_t i = 0; i < m_Entries.size(); i++)
 	{
-		glBindBuffer(GL_ARRAY_BUFFER, m_Entries[i].m_VertexBuffer);
-		glVertexAttribPointer(vPosition, 3, GL_FLOAT, GL_FALSE, sizeof(VertexAttribute), BUFFER_OFFSET(0));
-		glVertexAttribPointer(vTexCooord, 2, GL_FLOAT, GL_FALSE, sizeof(VertexAttribute), (const GLvoid*)(sizeof(Point3)));
-		glVertexAttribPointer(vNormal, 3, GL_FLOAT, GL_FALSE, sizeof(VertexAttribute), (const GLvoid*)(sizeof(Point3) + sizeof(TexturePoint2)));
-
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_Entries[i].m_IndexBuffer);
-
 		const unsigned int materialIndex = m_Entries[i].m_MaterialIndex;
 		if (materialIndex < m_Textures.size() && m_Textures[materialIndex])
 		{
@@ -77,11 +72,10 @@ void Mesh::Render()
 			// do something about multi material/
 		}
 
+		glBindVertexArray(m_Entries[i].m_VertexArray);
 		glDrawElements(GL_TRIANGLES, m_Entries[i].m_NumIndices, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
 	}
-	glDisableVertexAttribArray(vPosition);
-	glDisableVertexAttribArray(vTexCooord);
-	glDisableVertexAttribArray(vNormal);
 }
 
 bool Mesh::InitFromScene(const aiScene * pScene, const std::string & fileName)
@@ -182,13 +176,13 @@ bool Mesh::InitMaterials(const aiScene * pScene, const std::string & fileName)
 
 				if (!m_Textures[i]->Load())
 				{
-					printf("Error when loading texture: '%s'\n", fullPath.c_str());
+					//printf("Error when loading texture: '%s'\n", fullPath.c_str());
 					SAFE_DELETE_POINTER(m_Textures[i]);
 					flag = false;
 				}
 				else
 				{
-					printf("Load texture success: '%s'\n", fullPath.c_str());
+					//printf("Load texture success: '%s'\n", fullPath.c_str());
 				}
 			}
 		}
@@ -258,7 +252,8 @@ float Mesh::getSuitableDistanceFactor()
 	float maxY = m_SceneMaxPos.y > 0.0f ? m_SceneMaxPos.y : -m_SceneMaxPos.y;
 	float maxZ = m_SceneMaxPos.z > 0.0f ? m_SceneMaxPos.z : -m_SceneMaxPos.z;
 
-	return (maxX + maxY + maxZ) / 3.0f * 0.001f;
+	float result = (maxX + maxY + maxZ) / 3.0f * 0.2f;
+	return result > 0.0f ? result : -result;
 }
 
 Point3 Mesh::GetSceneCenterPos()
@@ -279,14 +274,31 @@ void Mesh::MeshEntry::Init(const std::vector<VertexAttribute>& Vertices, const s
 	if (Vertices.size() != 0 && Indices.size() != 0)
 	{
 		m_NumIndices = Indices.size();
-
+		glGenVertexArrays(1, &m_VertexArray);
 		glGenBuffers(1, &m_VertexBuffer);
+		glGenBuffers(1, &m_IndexBuffer);
+
+		glBindVertexArray(m_VertexArray);
+
 		glBindBuffer(GL_ARRAY_BUFFER, m_VertexBuffer);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(VertexAttribute) * Vertices.size(), &Vertices[0], GL_STATIC_DRAW);
 
-		glGenBuffers(1, &m_IndexBuffer);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IndexBuffer);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * m_NumIndices, &Indices[0], GL_STATIC_DRAW);
+
+		glEnableVertexAttribArray(vPosition);
+		glVertexAttribPointer(vPosition, 3, GL_FLOAT, GL_FALSE, sizeof(VertexAttribute), BUFFER_OFFSET(0));
+
+		glEnableVertexAttribArray(vTexCooord);
+		//glVertexAttribPointer(vTexCooord, 2, GL_FLOAT, GL_FALSE, sizeof(VertexAttribute), (const GLvoid*)(sizeof(Point3)));
+		glVertexAttribPointer(vTexCooord, 2, GL_FLOAT, GL_FALSE, sizeof(VertexAttribute), (const GLvoid*)offsetof(VertexAttribute, m_tex));
+
+		glEnableVertexAttribArray(vNormal);
+		//glVertexAttribPointer(vNormal, 3, GL_FLOAT, GL_FALSE, sizeof(VertexAttribute), (const GLvoid*)(sizeof(Point3) + sizeof(TexturePoint2)));
+		glVertexAttribPointer(vNormal, 3, GL_FLOAT, GL_FALSE, sizeof(VertexAttribute), (const GLvoid*)offsetof(VertexAttribute, m_normal));
+
+		// finish, unbind current vertex array
+		glBindVertexArray(0);
 	}
 }
 
@@ -309,9 +321,9 @@ void Mesh::MaterialProperty::Init(const aiColor3D ambient, const aiColor3D diffu
 	m_specularColor = Vec3(specular.r, specular.g, specular.b);
 	m_emissveColor = Vec3(emissive.r, emissive.g, emissive.b);
 
-	printf("ambient(%f, %f, %f)\ndiffuse(%f, %f, %f)\nspecular(%f, %f, %f)\nemissive(%f, %f, %f)\n",
-		m_ambientColor.x, m_ambientColor.y, m_ambientColor.z,
-		m_diffuseColor.x, m_diffuseColor.y, m_diffuseColor.z,
-		m_specularColor.x, m_specularColor.y, m_specularColor.z,
-		m_emissveColor.x, m_emissveColor.y, m_emissveColor.z);
+	//printf("ambient(%f, %f, %f)\ndiffuse(%f, %f, %f)\nspecular(%f, %f, %f)\nemissive(%f, %f, %f)\n",
+	//	m_ambientColor.x, m_ambientColor.y, m_ambientColor.z,
+	//	m_diffuseColor.x, m_diffuseColor.y, m_diffuseColor.z,
+	//	m_specularColor.x, m_specularColor.y, m_specularColor.z,
+	//	m_emissveColor.x, m_emissveColor.y, m_emissveColor.z);
 }
