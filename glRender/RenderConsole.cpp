@@ -56,6 +56,11 @@ public:
 
 	bool init() override
 	{
+		if (!m_geometryBufferObject.Init(WINDOW_WIDTH, WINDOW_HEIGHT))
+		{
+			return false;
+		}
+
 		m_pGameLightEffect = new LightShader(LightVSFileName.c_str(), LightFSFileName.c_str());
 		m_pGameLightEffect->Bind();
 
