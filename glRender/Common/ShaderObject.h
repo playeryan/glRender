@@ -238,11 +238,13 @@ public:
 	virtual void Init();
 	void SetMVPMatrix(const Matrix44& mvp);
 	void SetModelMatrix(const Matrix44& m);
+	void SetNormalMatrix(const Matrix44& m);
 	void SetColorTextureUnit(unsigned int textureUnit);
 
 private:
 	GLuint m_mvpMatrixLoc;
 	GLuint m_modelMatrixLoc;
+	GLuint m_normalMatrixLoc;
 	GLuint m_colorTextureUnitLoc;
 };
 

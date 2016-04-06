@@ -1,5 +1,8 @@
 #include "mesh.h"
 
+GLuint Mesh::m_quadVAO = 0;
+GLuint Mesh::m_quadVBO = 0;
+
 Mesh::MeshEntry::MeshEntry()
 	:	m_VertexArray(INVALID_GLRENDER_VALUE)
 	,	m_VertexBuffer(INVALID_GLRENDER_VALUE)
@@ -66,22 +69,35 @@ void Mesh::Render()
 	for (size_t i = 0; i < m_Entries.size(); i++)
 	{
 		const unsigned int materialIndex = m_Entries[i].m_MaterialIndex;
-		if (materialIndex < m_Textures.size() && m_Textures[materialIndex])
+		if (materialIndex < m_diffuseTextures.size() && m_diffuseTextures[materialIndex])
 		{
-			m_Textures[materialIndex]->Bind(GL_TEXTURE0);
+			m_diffuseTextures[materialIndex]->Bind(GL_TEXTURE0);
 			// do something about multi material/
 		}
 
 		glBindVertexArray(m_Entries[i].m_VertexArray);
 		glDrawElements(GL_TRIANGLES, m_Entries[i].m_NumIndices, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
+
+		// unbind texture unit
+		if (materialIndex < m_diffuseTextures.size() && m_diffuseTextures[materialIndex])
+		{
+			m_diffuseTextures[materialIndex]->UnBind(GL_TEXTURE0);
+		}
 	}
 }
 
 bool Mesh::InitFromScene(const aiScene * pScene, const std::string & fileName)
 {
 	m_Entries.resize(pScene->mNumMeshes);
-	m_Textures.resize(pScene->mNumMaterials);
+	m_diffuseTextures.resize(pScene->mNumMaterials);
+	m_heightTextures.resize(pScene->mNumMaterials);
+	for (size_t i = 0; i < pScene->mNumMaterials; i++)
+	{
+		m_diffuseTextures[i] = NULL;
+		m_heightTextures[i] = NULL;
+	}
+
 	for (size_t i = 0; i < m_Entries.size(); i++)
 	{
 		const aiMesh* paiMesh = pScene->mMeshes[i];
@@ -107,9 +123,14 @@ void Mesh::InitMesh(unsigned int index, const aiMesh * paiMesh)
 		const aiVector3D* pNormal = &(paiMesh->mNormals[i]);
 		// 某顶点可能有多个纹理坐标，这里待扩展/
 		const aiVector3D* pTexCoord = paiMesh->HasTextureCoords(0) ? &(paiMesh->mTextureCoords[0][i]) : &Zero3D;
+		//const aiVector3D* pTangent = &(paiMesh->mTangents[i]);
+		//const aiVector3D* pBitTangent = &(paiMesh->mBitangents[i]);
+
 		VertexAttribute va(	Point3(pPos->x, pPos->y, pPos->z), 
 							TexturePoint2(pTexCoord->x, pTexCoord->y), 
-							Vec3(pNormal->x, pNormal->y, pNormal->z) );
+							Vec3(pNormal->x, pNormal->y, pNormal->z)/*,
+							Vec3(pTangent->x, pTangent->y, pTangent->z),
+							Vec3(pBitTangent->x, pBitTangent->y, pBitTangent->z) */);
 		Vertices.push_back(va);
 	}
 
@@ -159,42 +180,61 @@ bool Mesh::InitMaterials(const aiScene * pScene, const std::string & fileName)
 		pMaterial->Get(AI_MATKEY_COLOR_EMISSIVE, emissiveColor);
 
 		m_materialProperty[i].Init(ambientColor, diffuseColor, specularColor, emissiveColor);
-		m_Textures[i] = NULL;
-		//printf("current material diffuse result: %d\n", pMaterial->GetTextureCount(aiTextureType_DIFFUSE));
-		//printf("current material ambient result: %d\n", pMaterial->GetTextureCount(aiTextureType_AMBIENT));
-		//printf("current material specular result: %d\n", pMaterial->GetTextureCount(aiTextureType_SPECULAR));
-		//printf("current material height result: %d\n", pMaterial->GetTextureCount(aiTextureType_HEIGHT));
-		// 使用普通漫反射纹理/
-		if (pMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0)
-		{
-			aiString path;
-			if (pMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS)
-			{
-				std::string fullPath = Dir + "/" + path.data;
-				printf("materail(%d), path: %s\n", i, fullPath.c_str());
-				m_Textures[i] = new Texture(fullPath, GL_TEXTURE_2D);
 
-				if (!m_Textures[i]->Load())
-				{
-					//printf("Error when loading texture: '%s'\n", fullPath.c_str());
-					SAFE_DELETE_POINTER(m_Textures[i]);
-					flag = false;
-				}
-				else
-				{
-					//printf("Load texture success: '%s'\n", fullPath.c_str());
-				}
-			}
-		}
+		printf("current material diffuse result: %d\n", pMaterial->GetTextureCount(aiTextureType_DIFFUSE));
+		printf("current material ambient result: %d\n", pMaterial->GetTextureCount(aiTextureType_AMBIENT));
+		printf("current material specular result: %d\n", pMaterial->GetTextureCount(aiTextureType_SPECULAR));
+		printf("current material height result: %d\n", pMaterial->GetTextureCount(aiTextureType_HEIGHT));
 
-		if (!m_Textures[i])
-		{
-			m_Textures[i] = new Texture("Resource/white.tga", GL_TEXTURE_2D);
-			flag = m_Textures[i]->Load();
-		}
+		InitVariousMaterials(pMaterial, i, aiTextureType_DIFFUSE, Dir);
+		InitVariousMaterials(pMaterial, i, aiTextureType_HEIGHT, Dir);
 	}
 
 	return flag;
+}
+
+bool Mesh::InitVariousMaterials(const aiMaterial * pMaterial, unsigned int index, aiTextureType type, const std::string & dir)
+{
+	bool result = false;
+	if (pMaterial->GetTextureCount(type) > 0)
+	{
+		aiString path;
+		std::vector<Texture*>::iterator reference;
+		std::string strType;
+		switch (type)
+		{
+		case aiTextureType_DIFFUSE:
+			reference = m_diffuseTextures.begin();
+			strType = DiffuseTexture;
+			break;
+		case aiTextureType_HEIGHT:
+			reference = m_heightTextures.begin();
+			strType = HeightTexture;
+			break;
+		default:
+			strType = NoneTexture;
+			break;
+		}
+		// 这里认为1个material仅对应1个texture，故index参数取0。是不严谨的，待修改/
+		if (pMaterial->GetTexture(type, 0, &path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS)
+		{
+			std::string fullPath = dir + "/" + path.data;
+			printf("materail(%d), path: %s\n", index, fullPath.c_str());
+			
+			Texture* tex = new Texture(fullPath, GL_TEXTURE_2D);
+			
+			if (!tex->Load())
+			{
+				printf("Error when loading texture: '%s'\n", fullPath.c_str());
+				SAFE_DELETE_POINTER(tex);
+			}
+			tex->SetTextureType(strType);
+			*(reference + index) = tex;
+
+			result = true;
+		}
+	}
+	return result;
 }
 
 void Mesh::CalcSceneCenterPos(const aiScene * pScene)
@@ -256,6 +296,33 @@ float Mesh::getSuitableDistanceFactor()
 	return result > 0.0f ? result : -result;
 }
 
+void Mesh::RenderQuad()
+{
+	if (m_quadVAO == 0)
+	{
+		GLfloat quadVertices[] = {
+			// Positions        // Texture Coords
+			-1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+			1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+			1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+		};
+		// Setup plane VAO
+		glGenVertexArrays(1, &m_quadVAO);
+		glGenBuffers(1, &m_quadVBO);
+		glBindVertexArray(m_quadVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, m_quadVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	}
+	glBindVertexArray(m_quadVAO);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glBindVertexArray(0);
+}
+
 Point3 Mesh::GetSceneCenterPos()
 {
 	return m_SceneCenterPos;
@@ -263,9 +330,9 @@ Point3 Mesh::GetSceneCenterPos()
 
 void Mesh::Clear()
 {
-	for (size_t i = 0; i < m_Textures.size(); i++)
+	for (size_t i = 0; i < m_diffuseTextures.size(); i++)
 	{
-		SAFE_DELETE_POINTER(m_Textures[i]);
+		SAFE_DELETE_POINTER(m_diffuseTextures[i]);
 	}
 }
 

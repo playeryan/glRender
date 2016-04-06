@@ -64,6 +64,34 @@ public:
 		m_pGameLightEffect = new LightShader(LightVSFileName.c_str(), LightFSFileName.c_str());
 		m_pGameLightEffect->Bind();
 
+		m_pGameGBufferEffect = new GeometryBufferShader(GBufferVSFileName.c_str(), GBufferFSFileName.c_str());
+		m_pGameGBufferEffect->Bind();
+		m_pGameGBufferEffect->SetColorTextureUnit(0);
+
+		m_pGameDirLightEffect = new DirLightShader(DirLightVSFileName.c_str(), DirLightFSFileName.c_str());
+		m_pGameDirLightEffect->Bind();
+		m_pGameDirLightEffect->setSpecularIntensity(specularIntensity);
+		m_pGameDirLightEffect->setSpecularPower(specularPower);
+		m_pGameDirLightEffect->setPositionTextureUnit(GeometryBuffer::GeometryBufferTextureType_Position);
+		m_pGameDirLightEffect->setColorTextureUnit(GeometryBuffer::GeometryBufferTextureType_Diffuse);
+		m_pGameDirLightEffect->setNormalTextureUnit(GeometryBuffer::GeometryBufferTextureType_Normal);
+		m_pGameDirLightEffect->setDirLightParams(m_dirLight);
+		m_pGameDirLightEffect->setScreenSize(WINDOW_WIDTH, WINDOW_HEIGHT);
+		Matrix44 m;
+		m.LoadIdentity();
+		m_pGameDirLightEffect->setMVPMatrix(m);
+
+		m_pGamePointLightEffect = new PointLightShader(PointLightVSFileName.c_str(), PointLightFSFileName.c_str());
+		m_pGamePointLightEffect->Bind();
+		m_pGamePointLightEffect->setSpecularIntensity(specularIntensity);
+		m_pGamePointLightEffect->setSpecularPower(specularPower);
+		m_pGamePointLightEffect->setPositionTextureUnit(GeometryBuffer::GeometryBufferTextureType_Position);
+		m_pGamePointLightEffect->setColorTextureUnit(GeometryBuffer::GeometryBufferTextureType_Diffuse);
+		m_pGamePointLightEffect->setNormalTextureUnit(GeometryBuffer::GeometryBufferTextureType_Normal);
+		m_pGamePointLightEffect->setScreenSize(WINDOW_WIDTH, WINDOW_HEIGHT);
+
+		m_pGameStencilEffect = new NoneShader(NoneVSFileName.c_str(), NoneFSFileName.c_str());
+
 		//m_pGameShadowEffect = new ShadowMapShader(pShadowVSFileName, pShadowFSFileName);
 		
 		//if (!m_shadowMapFBO.Init(WINDOW_WIDTH, WINDOW_HEIGHT))
@@ -72,11 +100,12 @@ public:
 		//}
 
 		m_pMesh = new Mesh();
+		m_pPointLightSphere = new Mesh();
+		m_pDirLightQuad = new Mesh();
 		// 加载不同的模型文件/
-		bool flag = m_pMesh->LoadMesh("Resource/crytek-sponza/sponza.obj");
-		//bool flag = m_pMesh->LoadMesh("Resource/dabrovic-sponza/sponza.obj");
-		//bool flag = m_pMesh->LoadMesh("Resource/head/head.obj");
-		//bool flag = m_pMesh->LoadMesh("Resource/sibenik/sibenik.obj");
+		bool flag = m_pMesh->LoadMesh("Resource/crytek-sponza/sponza.obj")
+			&& m_pPointLightSphere->LoadMesh("Resource/sphere.obj")
+			&& m_pDirLightQuad->LoadMesh("Resource/quad.obj");
 
 		Point3 sceneCenter = m_pMesh->GetSceneCenterPos();
 		m_pCamera->setCamera(Point4(sceneCenter.x, sceneCenter.y, sceneCenter.z, 1.0f), targetVector, upVector);
@@ -87,16 +116,139 @@ public:
 	}
 	void display() override
 	{
-		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 		glFrontFace(GL_CCW);
 		glCullFace(GL_BACK);
 		glEnable(GL_MULTISAMPLE);
 		glEnable(GL_DEPTH_TEST);
 
 		RenderProcessing();
+
+		/***************/
+		//GeometryProcessing();
+		////glEnable(GL_STENCIL_TEST);
+		//for (size_t i = 0; i < m_pointLights.size(); i++)
+		//{
+		//	//StencilTestPass(i);
+		//	PointLightProcessing(i);
+		//}
+		////glDisable(GL_STENCIL_TEST);
+		//DirectionalLightProcessing();
+		//m_geometryBufferObject.CopyDepthBuffer();
+		//FinalPass();
 	}
+	void GeometryProcessing()
+	{
+		m_geometryBufferObject.BindForGeometryPass();
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		m_pGameGBufferEffect->Bind();
+		// 只有G-Buffer处理阶段开启深度检测/
+		//glDepthMask(GL_TRUE);
+		glEnable(GL_DEPTH_TEST);
+		glDisable(GL_BLEND);
+
+		m_pGameGBufferEffect->SetMVPMatrix(m_pCamera->getMVPMatrix());
+		m_pGameGBufferEffect->SetModelMatrix(m_pCamera->getModelMatrix());
+		m_pGameGBufferEffect->SetNormalMatrix(m_pCamera->getNormTransformMatrix());
+
+		m_pMesh->Render();
+		m_geometryBufferObject.UnBind();
+		// G-Buffer处理完毕，关闭深度检测/
+		//glDepthMask(GL_FALSE);
+		glDisable(GL_DEPTH_TEST);
+	}
+	void StencilTestPass(unsigned int pointLightIndex)
+	{
+		m_pGameStencilEffect->Bind();
+		// 关闭颜色/深度缓冲的写入，开启深度测试，开启模板缓冲用于模板测试/
+		m_geometryBufferObject.BindForStencilPass();
+		glEnable(GL_DEPTH_TEST);
+		glDisable(GL_CULL_FACE);
+		glClear(GL_STENCIL_BUFFER_BIT);
+		// 配置模板测试策略/
+		glStencilFunc(GL_ALWAYS, 0, 0);
+		glStencilOpSeparate(GL_BACK, GL_KEEP, GL_INCR_WRAP, GL_KEEP);
+		glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_DECR_WRAP, GL_KEEP);
+		// 渲染点光源球体/
+		float scaleRadius = CalcPointLightSphere(m_pointLights[pointLightIndex]);
+		//printf("pointLight: %d, radius: %f\n", pointLightIndex, scaleRadius);
+		m_pCamera->setScale(Vec3(scaleRadius, scaleRadius, scaleRadius));
+		m_pCamera->setWorldPos(m_pointLights[pointLightIndex].PointLightPos);
+
+		m_pGameStencilEffect->SetMVPMatrix(m_pCamera->getMVPMatrix());
+
+		m_pPointLightSphere->Render();
+		m_pCamera->recoverModelTransform();
+	}
+	void PointLightProcessing(unsigned int pointLightIndex)
+	{
+		// temp
+		glDisable(GL_DEPTH_TEST);
+		glEnable(GL_BLEND);
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFunc(GL_ONE, GL_ONE);
+		glClear(GL_COLOR_BUFFER_BIT);
+		// 设置点光源位置/
+		static float pointLightMoveSpeed = 150.0f;
+		static float pointLightHeightParam = 0.0f;
+		pointLightHeightParam += pointLightMoveSpeed * m_deltaTime;	// 使得移动速度不受帧数影响/
+		float lightPosParam = cosf(ToRadian(pointLightHeightParam)) * m_pMesh->getSuitableDistanceFactor();
+		Point4 sceneCenterPos = Point4(m_pMesh->GetSceneCenterPos());
+
+		static float pointLightBaseX = sceneCenterPos.x;
+		m_pointLights[0].PointLightPos = Point4(pointLightBaseX + lightPosParam * 2.0f, sceneCenterPos.y * 1.2f, sceneCenterPos.z);
+
+		// PointLightShader所需数据/
+		// 光照计算放在世界坐标下/
+		m_pGamePointLightEffect->Bind();
+		m_geometryBufferObject.BindForLightPass();
+		m_pGamePointLightEffect->setEyeWorldPos(m_pCamera->getEyePosition());
+		//glStencilFunc(GL_NOTEQUAL, 0, 0xff);
+		//glStencilFunc(GL_ALWAYS, 0, 0);
+		//glDisable(GL_DEPTH_TEST);
+		//glEnable(GL_BLEND);
+		//glBlendEquation(GL_FUNC_ADD);
+		//glBlendFunc(GL_ONE, GL_ONE);
+		//glEnable(GL_CULL_FACE);
+		//glCullFace(GL_FRONT);
+		//float scaleRadius = CalcPointLightSphere(m_pointLights[pointLightIndex]);
+		//printf("pointLight: %d, radius: %f\n", pointLightIndex, scaleRadius);
+		//m_pCamera->setScale(Vec3(scaleRadius, scaleRadius, scaleRadius));
+		m_pCamera->setWorldPos(m_pointLights[pointLightIndex].PointLightPos);
+
+		m_pGamePointLightEffect->setPointLightsParams(m_pointLights.size(), &m_pointLights[pointLightIndex]);
+		m_pGamePointLightEffect->setMVPMatrix(m_pCamera->getMVPMatrix());
+
+		//m_pPointLightSphere->Render();
+		Mesh::RenderQuad();
+		m_pCamera->recoverModelTransform();
+		//glCullFace(GL_BACK);
+		//glDisable(GL_BLEND);
+	}
+	void DirectionalLightProcessing()
+	{
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		m_pGameDirLightEffect->Bind();
+		m_geometryBufferObject.BindForLightPass();
+		m_pGameDirLightEffect->setEyeWorldPos(m_pCamera->getEyePosition());
+
+		glDisable(GL_DEPTH_TEST);
+		glEnable(GL_BLEND);
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFunc(GL_ONE, GL_ONE);
+
+		//m_pDirLightQuad->Render();
+		Mesh::RenderQuad();
+
+		glDisable(GL_BLEND);
+	}
+	void FinalPass()
+	{
+		//m_geometryBufferObject.BindForFinalPass();
+		//glBlitFramebuffer(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
+		//	0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+
+	}
+
 	void ShadowMapProcessing()
 	{
 		//m_shadowMapFBO.BindForWriting();
@@ -105,6 +257,7 @@ public:
 	}
 	void RenderProcessing()
 	{
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		m_pGameLightEffect->Bind();
@@ -182,6 +335,8 @@ private:
 	NoneShader*				m_pGameStencilEffect;
 	ShadowMapShader*		m_pGameShadowEffect;
 	Mesh*					m_pMesh;
+	Mesh*					m_pDirLightQuad;
+	Mesh*					m_pPointLightSphere;
 	DirectionalLight		m_dirLight;
 	std::vector<PointLight>	m_pointLights;
 	std::vector<SpotLight>	m_spotLights;

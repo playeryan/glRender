@@ -238,6 +238,8 @@
     <None Include="Common\ThirdParty\assimp\include\assimp\vector3.inl" />
     <None Include="renderFragmentShader.frag" />
     <None Include="renderVertexShader.vert" />
+    <None Include="ShaderFiles\deferredFragmentShader.frag" />
+    <None Include="ShaderFiles\deferredVertexShader.vert" />
     <None Include="ShaderFiles\directionalLightFragmentShader.frag" />
     <None Include="ShaderFiles\directionalLightVertexShader.vert" />
     <None Include="ShaderFiles\GeometryBufferFragmentShader.frag" />

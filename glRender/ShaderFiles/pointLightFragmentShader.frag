@@ -133,7 +133,8 @@ void main()
 		totalLight += pointLightColor;
 		//totalLight = vec4(1.0, 0.5, 0.0, 0.0);
 	}
-	fColor = vec4(Color, 1.0) * totalLight;
+	//fColor = vec4(Color, 1.0) * totalLight;
+	fColor = vec4(1.0, 0.5, 0.0, 0.0);
 }
 
 

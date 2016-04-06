@@ -494,7 +494,7 @@ void GeometryBufferShader::Init()
 	BaseShaderObject::BaseLoadShader();
 	m_mvpMatrixLoc = getUniformLocationInShader("mvpMatrix");
 	m_modelMatrixLoc = getUniformLocationInShader("modelMatrix");
-	m_colorTextureUnitLoc = getUniformLocationInShader("ColorMap");
+	m_normalMatrixLoc = getUniformLocationInShader("normalMatrix");
 }
 
 void GeometryBufferShader::SetMVPMatrix(const Matrix44 & mvp)
@@ -505,6 +505,11 @@ void GeometryBufferShader::SetMVPMatrix(const Matrix44 & mvp)
 void GeometryBufferShader::SetModelMatrix(const Matrix44 & m)
 {
 	glUniformMatrix4fv(m_modelMatrixLoc, 1, true, m.m);
+}
+
+void GeometryBufferShader::SetNormalMatrix(const Matrix44 & m)
+{
+	glUniformMatrix4fv(m_normalMatrixLoc, 1, true, m.m);
 }
 
 void GeometryBufferShader::SetColorTextureUnit(unsigned int textureUnit)

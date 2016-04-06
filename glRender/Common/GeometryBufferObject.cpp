@@ -46,6 +46,12 @@ bool GeometryBuffer::Init(unsigned int windowWidth, unsigned int windowHeight)
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, m_textures[i], 0);
 	}
+	std::vector<GLenum> drawBuffers;
+	for (size_t i = 0; i < m_textures.size(); i++)
+	{
+		drawBuffers.push_back(GL_COLOR_ATTACHMENT0 + i);
+	}
+	glDrawBuffers(drawBuffers.size(), &drawBuffers[0]);
 
 	// for depth texture
 	//glGenTextures(1, &m_depthTexture);
@@ -57,20 +63,13 @@ bool GeometryBuffer::Init(unsigned int windowWidth, unsigned int windowHeight)
 	glBindRenderbuffer(GL_RENDERBUFFER, m_depthTexture);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, windowWidth, windowHeight);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_depthTexture);
-	
+
 	// for final texture
 	// 最终渲染结果挂载至GL_COLOR_ATTACHMENT4上
-	glGenTextures(1, &m_finalTexture);
-	glBindTexture(GL_TEXTURE_2D, m_finalTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, windowWidth, windowHeight, 0, GL_RGB, GL_FLOAT, BUFFER_OFFSET(0));
-	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, m_finalTexture, 0);
-
-	std::vector<GLenum> drawBuffers;
-	for (size_t i = 0; i < m_textures.size(); i++)		
-	{
-		drawBuffers.push_back(GL_COLOR_ATTACHMENT0 + i);
-	}
-	glDrawBuffers(drawBuffers.size(), &drawBuffers[0]);
+	//glGenTextures(1, &m_finalTexture);
+	//glBindTexture(GL_TEXTURE_2D, m_finalTexture);
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, windowWidth, windowHeight, 0, GL_RGB, GL_FLOAT, BUFFER_OFFSET(0));
+	//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, m_finalTexture, 0);
 
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 
@@ -92,34 +91,35 @@ bool GeometryBuffer::Init(unsigned int windowWidth, unsigned int windowHeight)
 //	glDrawBuffer(GL_COLOR_ATTACHMENT4);
 //	glClear(GL_COLOR_BUFFER_BIT);
 //}
-//
-//void GeometryBuffer::BindForGeometryPass()
-//{
-//	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-//	std::vector<GLenum> drawBuffers;
-//	for (size_t i = 0; i < m_textures.size(); i++)
-//	{
-//		drawBuffers.push_back(GL_COLOR_ATTACHMENT0 + i);
-//	}
-//	glDrawBuffers(drawBuffers.size(), &drawBuffers[0]);
-//}
-//
-//void GeometryBuffer::BindForStencilPass()
-//{
-//	// 模板测试阶段，仅向模板缓存中写入数据，禁用颜色输出/
-//	glDrawBuffer(GL_NONE);
-//}
-//
-//void GeometryBuffer::BindForLightPass()
-//{
-//	glDrawBuffer(GL_COLOR_ATTACHMENT4);
-//	for (size_t i = 0; i < m_textures.size(); i++)
-//	{
-//		glActiveTexture(GL_TEXTURE0 + i);
-//		glBindTexture(GL_TEXTURE_2D, m_textures[GeometryBufferTextureType_Position + i]);
-//	}
-//}
-//
+
+void GeometryBuffer::BindForGeometryPass()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+	//std::vector<GLenum> drawBuffers;
+	//for (size_t i = 0; i < m_textures.size(); i++)
+	//{
+	//	drawBuffers.push_back(GL_COLOR_ATTACHMENT0 + i);
+	//}
+	//glDrawBuffers(drawBuffers.size(), &drawBuffers[0]);
+}
+
+void GeometryBuffer::BindForStencilPass()
+{
+	// 模板测试阶段，仅向模板缓存中写入数据，禁用颜色输出/
+	glDrawBuffer(GL_NONE);
+}
+
+void GeometryBuffer::BindForLightPass()
+{
+	//glDrawBuffer(GL_COLOR_ATTACHMENT4);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	for (size_t i = 0; i < m_textures.size(); i++)
+	{
+		glActiveTexture(GL_TEXTURE0 + i);
+		glBindTexture(GL_TEXTURE_2D, m_textures[GeometryBufferTextureType_Position + i]);
+	}
+}
+
 //void GeometryBuffer::BindForFinalPass()
 //{
 //	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -127,20 +127,25 @@ bool GeometryBuffer::Init(unsigned int windowWidth, unsigned int windowHeight)
 //	glReadBuffer(GL_COLOR_ATTACHMENT4);
 //}
 
-void GeometryBuffer::BindForWriting()
+void GeometryBuffer::UnBind()
 {
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void GeometryBuffer::BindForReading()
-{
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	for (size_t i = 0; i < m_textures.size(); i++)
-	{
-		glActiveTexture(GL_TEXTURE0 + i);
-		glBindTexture(GL_TEXTURE_2D, m_textures[GeometryBufferTextureType_Position + i]);
-	}
-}
+//void GeometryBuffer::BindForWriting()
+//{
+//	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fbo);
+//}
+//
+//void GeometryBuffer::BindForReading()
+//{
+//	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+//	for (size_t i = 0; i < m_textures.size(); i++)
+//	{
+//		glActiveTexture(GL_TEXTURE0 + i);
+//		glBindTexture(GL_TEXTURE_2D, m_textures[GeometryBufferTextureType_Position + i]);
+//	}
+//}
 
 void GeometryBuffer::CopyDepthBuffer()
 {

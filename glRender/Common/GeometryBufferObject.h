@@ -20,7 +20,7 @@ public:
 		GeometryBufferTextureType_Position,
 		GeometryBufferTextureType_Diffuse,
 		GeometryBufferTextureType_Normal,
-		GeometryBufferTextureType_TexCoord,
+		//GeometryBufferTextureType_TexCoord,
 		GeometryBufferNumTextures
 	};
 
@@ -30,12 +30,13 @@ public:
 	bool Init(unsigned int windowWidth, unsigned int windowHeight);
 
 	//void StartFrame();
-	//void BindForGeometryPass();
-	//void BindForStencilPass();
-	//void BindForLightPass();
+	void BindForGeometryPass();
+	void BindForStencilPass();
+	void BindForLightPass();
 	//void BindForFinalPass();
-	void BindForWriting();
-	void BindForReading();
+	void UnBind();
+	//void BindForWriting();
+	//void BindForReading();
 	void CopyDepthBuffer();
 
 private:

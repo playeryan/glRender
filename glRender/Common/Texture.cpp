@@ -2,6 +2,7 @@
 
 Texture::Texture(const std::string & FileName, GLenum TextureTarget)
 	:	m_fileName(FileName.c_str())
+	,	m_textureType(NoneTexture)
 	,	m_textureTarget(TextureTarget)
 {
 
@@ -9,13 +10,13 @@ Texture::Texture(const std::string & FileName, GLenum TextureTarget)
 
 Texture::~Texture()
 {
-	SAFE_DELETE_POINTER(m_texture);
+	SAFE_DELETE_POINTER(m_textureData);
 }
 
 bool Texture::Load()
 {
-	m_texture = Bitmap::bitmapFromFile(m_fileName);
-	if (!m_texture)
+	m_textureData = Bitmap::bitmapFromFile(m_fileName);
+	if (!m_textureData)
 	{
 		//printf("file: %s, load failed\n", m_fileName.c_str());
 		return false;
@@ -25,7 +26,7 @@ bool Texture::Load()
 	//printf("texture format: %s\n", m_texture->getMapFormatStr().c_str());
 	glGenTextures(1, &m_textureObj);
 	glBindTexture(m_textureTarget, m_textureObj);
-	glTexImage2D(m_textureTarget, 0, GL_RGB, (GLsizei)m_texture->getBMPWidth(), (GLsizei)m_texture->getBMPHeight(), 0, m_texture->getMapFormat(), GL_UNSIGNED_BYTE, m_texture->getPixels());
+	glTexImage2D(m_textureTarget, 0, GL_RGB, (GLsizei)m_textureData->getBMPWidth(), (GLsizei)m_textureData->getBMPHeight(), 0, m_textureData->getMapFormat(), GL_UNSIGNED_BYTE, m_textureData->getPixels());
 	
 	// 为消除摩尔纹，使用mipmap贴图/
 	glTexParameterf(m_textureTarget, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -54,4 +55,15 @@ void Texture::Bind(GLenum TextureUnit)
 {
 	glActiveTexture(TextureUnit);
 	glBindTexture(m_textureTarget, m_textureObj);
+}
+
+void Texture::UnBind(GLenum TextureUnit)
+{
+	glActiveTexture(TextureUnit);
+	glBindTexture(m_textureTarget, 0);
+}
+
+void Texture::SetTextureType(const std::string type)
+{
+	m_textureType = type;
 }

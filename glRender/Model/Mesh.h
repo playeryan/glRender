@@ -26,14 +26,18 @@ struct VertexAttribute
 {
 	VertexAttribute() = default;
 	VertexAttribute(const Point3 pos, const TexturePoint2 tex, const Vec3 normal)
-		:	m_pos(pos)
-		,	m_tex(tex)
-		,	m_normal(normal)
+		: m_pos(pos)
+		, m_tex(tex)
+		, m_normal(normal)
+		//, m_tangent(tangent)
+		//, m_bitTangent(bitTangent)
 	{}
 
 	Point3			m_pos;
 	TexturePoint2	m_tex;
 	Vec3			m_normal;
+	//Vec3			m_tangent;
+	//Vec3			m_bitTangent;
 };
 
 class Mesh
@@ -49,11 +53,15 @@ public:
 	Point3 GetSceneCenterPos();
 	float getSuitableDistanceFactor();
 	
-
+	// RenderQuad() Renders a 1x1 quad in NDC, best used for framebuffer color targets
+	// and post-processing effects.
+	static void RenderQuad();
 private:
 	bool InitFromScene(const aiScene* pScene, const std::string& fileName);
 	void InitMesh(unsigned int index, const aiMesh* paiMesh);
 	bool InitMaterials(const aiScene* pScene, const std::string& fileName);
+	bool InitVariousMaterials(const aiMaterial* pMaterial, unsigned int index, aiTextureType type, const std::string& dir);
+
 	void CalcSceneCenterPos(const aiScene* pScene);	// 结构优化空间：移至具体init mesh时，循环计算/
 	void Clear();
 
@@ -87,10 +95,14 @@ private:
 	};
 
 	std::vector<MeshEntry>			m_Entries;	// 优化空间：容器存放指针，而不是数据实例/
-	std::vector<Texture*>			m_Textures;
+	std::vector<Texture*>			m_diffuseTextures;
+	std::vector<Texture*>			m_heightTextures;
 	std::vector<MaterialProperty>	m_materialProperty;
 	Point3 m_SceneCenterPos;
 	Point3 m_SceneMaxPos;
+private:
+	static GLuint m_quadVAO;
+	static GLuint m_quadVBO;
 };
 
 

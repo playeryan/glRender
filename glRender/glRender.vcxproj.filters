@@ -279,6 +279,8 @@
     <None Include="ShaderFiles\pointLightVertexShader.vert" />
     <None Include="ShaderFiles\renderFragmentShader.frag" />
     <None Include="ShaderFiles\renderVertexShader.vert" />
+    <None Include="ShaderFiles\deferredFragmentShader.frag" />
+    <None Include="ShaderFiles\deferredVertexShader.vert" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="assimp.lib" />
