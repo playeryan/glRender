@@ -8,8 +8,6 @@
 #include "Math/Matrix44.h"
 #include "Light.h"
 
-#define MAX_POINT_LIGHT_NUMS 2
-#define MAX_SPOT_LIGHT_NUMS 2
 
 /****************************BaseShaderObject***********************************/
 class BaseShaderObject
@@ -83,7 +81,7 @@ private:
 			GLuint Linear;
 			GLuint Exp;
 		} Atten;
-	} m_pointLightLoc[MAX_POINT_LIGHT_NUMS];
+	} m_pointLightLoc[pointLightNum];
 
 	struct spotLightLoc
 	{
@@ -99,7 +97,7 @@ private:
 			GLuint Linear;
 			GLuint Exp;
 		} Atten;
-	} m_spotLightLoc[MAX_SPOT_LIGHT_NUMS];
+	} m_spotLightLoc[spotLightNum];
 };
 
 /**********************LightShader, inherit BaseShaderObject******************/
@@ -113,8 +111,6 @@ public:
 
 	void setMVPMatrix(const Matrix44& mvp);
 	void setLightMVPMatrix(const Matrix44& mvp);	// for shadow map
-	void setModelMatrix(const Matrix44& mv);
-	void setNormTransformMatrix(const Matrix44& m);
 	void setPositionTextureUnit(unsigned int TextureUnit);
 	void setColorTextureUnit(unsigned int TextureUnit);
 	void setNormalTextureUnit(unsigned int TextureUnit);
@@ -123,11 +119,10 @@ public:
 	void setSpecularIntensity(float intensity);
 	void setSpecularPower(float power);
 	void setScreenSize(unsigned int width, unsigned int height);
+	void setAmbientIntensity(float intensity);
 private:
 	GLuint m_mvpMatrixLoc;
 	GLuint m_lightMVPMatrixLoc;
-	GLuint m_modelMatrixLoc;
-	GLuint m_normalTransformMatrixLoc;
 	GLuint m_positionTextureLoc;
 	GLuint m_colorTextureLoc;
 	GLuint m_normalTextureLoc;
@@ -136,6 +131,7 @@ private:
 	GLuint m_specularIntensityLoc;
 	GLuint m_specularPowerLoc;
 	GLuint m_screenSizeLoc;
+	GLuint m_ambientIntensity;
 };
 
 /**********************DirLightShader, inherit DeferredShader******************/
@@ -182,7 +178,7 @@ private:
 			GLuint Linear;
 			GLuint Exp;
 		} Atten;
-	} m_pointLightLoc[MAX_POINT_LIGHT_NUMS];
+	} m_pointLightLoc[pointLightNum];
 };
 
 /**********************SpotLightShader, inherit DeferredShader******************/
@@ -210,7 +206,7 @@ private:
 			GLuint Linear;
 			GLuint Exp;
 		} Atten;
-	} m_spotLightLoc[MAX_SPOT_LIGHT_NUMS];
+	} m_spotLightLoc[spotLightNum];
 };
 
 /********************ShadowMapShader, inherit BaseShaderObject**********************/
@@ -240,12 +236,14 @@ public:
 	void SetModelMatrix(const Matrix44& m);
 	void SetNormalMatrix(const Matrix44& m);
 	void SetColorTextureUnit(unsigned int textureUnit);
+	void SetHeightTextureUnit(unsigned int textureUnit);
 
 private:
 	GLuint m_mvpMatrixLoc;
 	GLuint m_modelMatrixLoc;
 	GLuint m_normalMatrixLoc;
 	GLuint m_colorTextureUnitLoc;
+	GLuint m_heightTextureUnitLoc;
 };
 
 /****************NoneShader, inherit BaseShaderObject******************/

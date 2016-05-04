@@ -162,7 +162,7 @@
     <ClCompile Include="Math\Vec3.cpp" />
     <ClCompile Include="Math\Vec4.cpp" />
     <ClCompile Include="Model\Bitmap.cpp" />
-    <ClCompile Include="Model\Mesh.cpp" />
+    <ClCompile Include="Model\Model.cpp" />
     <ClCompile Include="Model\MyTGA.cpp" />
     <ClCompile Include="Model\ObjModel.cpp" />
     <ClCompile Include="RenderConsole.cpp" />
@@ -221,7 +221,7 @@
     <ClInclude Include="Math\Vec3.h" />
     <ClInclude Include="Math\Vec4.h" />
     <ClInclude Include="Model\Bitmap.h" />
-    <ClInclude Include="Model\Mesh.h" />
+    <ClInclude Include="Model\Model.h" />
     <ClInclude Include="Model\MyTGA.h" />
     <ClInclude Include="Model\ObjModel.h" />
     <ClInclude Include="ShaderFiles\ShaderFiles.h" />
@@ -236,8 +236,6 @@
     <None Include="Common\ThirdParty\assimp\include\assimp\quaternion.inl" />
     <None Include="Common\ThirdParty\assimp\include\assimp\vector2.inl" />
     <None Include="Common\ThirdParty\assimp\include\assimp\vector3.inl" />
-    <None Include="renderFragmentShader.frag" />
-    <None Include="renderVertexShader.vert" />
     <None Include="ShaderFiles\deferredFragmentShader.frag" />
     <None Include="ShaderFiles\deferredVertexShader.vert" />
     <None Include="ShaderFiles\directionalLightFragmentShader.frag" />

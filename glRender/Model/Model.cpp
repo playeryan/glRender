@@ -1,9 +1,9 @@
-#include "mesh.h"
+#include "Model.h"
 
-GLuint Mesh::m_quadVAO = 0;
-GLuint Mesh::m_quadVBO = 0;
+GLuint Model::m_quadVAO = 0;
+GLuint Model::m_quadVBO = 0;
 
-Mesh::MeshEntry::MeshEntry()
+Model::Mesh::Mesh()
 	:	m_VertexArray(INVALID_GLRENDER_VALUE)
 	,	m_VertexBuffer(INVALID_GLRENDER_VALUE)
 	,	m_IndexBuffer(INVALID_GLRENDER_VALUE)
@@ -11,7 +11,7 @@ Mesh::MeshEntry::MeshEntry()
 	,	m_MaterialIndex(INVALID_MATERIAL)
 {}
 
-Mesh::MeshEntry::~MeshEntry()
+Model::Mesh::~Mesh()
 {
 	if (m_VertexArray != INVALID_GLRENDER_VALUE)
 	{
@@ -27,16 +27,16 @@ Mesh::MeshEntry::~MeshEntry()
 	}
 }
 
-Mesh::Mesh()
+Model::Model()
 	:	m_SceneCenterPos(Point3(0.0f, 0.0f, 0.0f))
 {}
 
-Mesh::~Mesh()
+Model::~Model()
 {
 	Clear();
 }
 
-bool Mesh::LoadMesh(const std::string & fileName)
+bool Model::LoadMesh(const std::string & fileName)
 {
 	Clear();
 	
@@ -64,19 +64,23 @@ bool Mesh::LoadMesh(const std::string & fileName)
 	return flag;
 }
 
-void Mesh::Render()
+void Model::Render()
 {
-	for (size_t i = 0; i < m_Entries.size(); i++)
+	for (size_t i = 0; i < m_Meshes.size(); i++)
 	{
-		const unsigned int materialIndex = m_Entries[i].m_MaterialIndex;
-		if (materialIndex < m_diffuseTextures.size() && m_diffuseTextures[materialIndex])
+		const unsigned int materialIndex = m_Meshes[i].m_MaterialIndex;
+		if (m_diffuseTextures[materialIndex])
 		{
 			m_diffuseTextures[materialIndex]->Bind(GL_TEXTURE0);
 			// do something about multi material/
 		}
+		if (m_heightTextures[materialIndex])
+		{
+			m_heightTextures[materialIndex]->Bind(GL_TEXTURE1);
+		}
 
-		glBindVertexArray(m_Entries[i].m_VertexArray);
-		glDrawElements(GL_TRIANGLES, m_Entries[i].m_NumIndices, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(m_Meshes[i].m_VertexArray);
+		glDrawElements(GL_TRIANGLES, m_Meshes[i].m_NumIndices, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 
 		// unbind texture unit
@@ -87,9 +91,9 @@ void Mesh::Render()
 	}
 }
 
-bool Mesh::InitFromScene(const aiScene * pScene, const std::string & fileName)
+bool Model::InitFromScene(const aiScene * pScene, const std::string & fileName)
 {
-	m_Entries.resize(pScene->mNumMeshes);
+	m_Meshes.resize(pScene->mNumMeshes);
 	m_diffuseTextures.resize(pScene->mNumMaterials);
 	m_heightTextures.resize(pScene->mNumMaterials);
 	for (size_t i = 0; i < pScene->mNumMaterials; i++)
@@ -98,7 +102,7 @@ bool Mesh::InitFromScene(const aiScene * pScene, const std::string & fileName)
 		m_heightTextures[i] = NULL;
 	}
 
-	for (size_t i = 0; i < m_Entries.size(); i++)
+	for (size_t i = 0; i < m_Meshes.size(); i++)
 	{
 		const aiMesh* paiMesh = pScene->mMeshes[i];
 		InitMesh(i, paiMesh);
@@ -107,9 +111,9 @@ bool Mesh::InitFromScene(const aiScene * pScene, const std::string & fileName)
 	return InitMaterials(pScene, fileName);
 }
 
-void Mesh::InitMesh(unsigned int index, const aiMesh * paiMesh)
+void Model::InitMesh(unsigned int index, const aiMesh * paiMesh)
 {
-	m_Entries[index].m_MaterialIndex = paiMesh->mMaterialIndex;
+	m_Meshes[index].m_MaterialIndex = paiMesh->mMaterialIndex;
 
 	std::vector<VertexAttribute> Vertices;
 	std::vector<unsigned int> Indices;
@@ -143,10 +147,10 @@ void Mesh::InitMesh(unsigned int index, const aiMesh * paiMesh)
 		Indices.push_back(paiFace->mIndices[2]);
 	}
 
-	m_Entries[index].Init(Vertices, Indices);
+	m_Meshes[index].Init(Vertices, Indices);
 }
 
-bool Mesh::InitMaterials(const aiScene * pScene, const std::string & fileName)
+bool Model::InitMaterials(const aiScene * pScene, const std::string & fileName)
 {
 	std::string::size_type SlashIndex = fileName.find_last_of("/");
 	std::string Dir;
@@ -193,7 +197,7 @@ bool Mesh::InitMaterials(const aiScene * pScene, const std::string & fileName)
 	return flag;
 }
 
-bool Mesh::InitVariousMaterials(const aiMaterial * pMaterial, unsigned int index, aiTextureType type, const std::string & dir)
+bool Model::InitVariousMaterials(const aiMaterial * pMaterial, unsigned int index, aiTextureType type, const std::string & dir)
 {
 	bool result = false;
 	if (pMaterial->GetTextureCount(type) > 0)
@@ -237,7 +241,7 @@ bool Mesh::InitVariousMaterials(const aiMaterial * pMaterial, unsigned int index
 	return result;
 }
 
-void Mesh::CalcSceneCenterPos(const aiScene * pScene)
+void Model::CalcSceneCenterPos(const aiScene * pScene)
 {
 	float vertexMaxX = 0.0f, vertexMaxY = 0.0f, vertexMaxZ = 0.0f;
 	float vertexMinX = 100.0f, vertexMinY = 100.0f, vertexMinZ = 100.0f;
@@ -286,7 +290,7 @@ void Mesh::CalcSceneCenterPos(const aiScene * pScene)
 	printf("Scene center pos: (%f, %f, %f)\n", m_SceneCenterPos.x, m_SceneCenterPos.y, m_SceneCenterPos.z);
 }
 
-float Mesh::getSuitableDistanceFactor()
+float Model::getSuitableDistanceFactor()
 {
 	float maxX = m_SceneMaxPos.x > 0.0f ? m_SceneMaxPos.x : -m_SceneMaxPos.x;
 	float maxY = m_SceneMaxPos.y > 0.0f ? m_SceneMaxPos.y : -m_SceneMaxPos.y;
@@ -296,7 +300,7 @@ float Mesh::getSuitableDistanceFactor()
 	return result > 0.0f ? result : -result;
 }
 
-void Mesh::RenderQuad()
+void Model::RenderQuad()
 {
 	if (m_quadVAO == 0)
 	{
@@ -323,12 +327,12 @@ void Mesh::RenderQuad()
 	glBindVertexArray(0);
 }
 
-Point3 Mesh::GetSceneCenterPos()
+Point3 Model::GetSceneCenterPos()
 {
 	return m_SceneCenterPos;
 }
 
-void Mesh::Clear()
+void Model::Clear()
 {
 	for (size_t i = 0; i < m_diffuseTextures.size(); i++)
 	{
@@ -336,7 +340,7 @@ void Mesh::Clear()
 	}
 }
 
-void Mesh::MeshEntry::Init(const std::vector<VertexAttribute>& Vertices, const std::vector<unsigned int>& Indices)
+void Model::Mesh::Init(const std::vector<VertexAttribute>& Vertices, const std::vector<unsigned int>& Indices)
 {
 	if (Vertices.size() != 0 && Indices.size() != 0)
 	{
@@ -369,7 +373,7 @@ void Mesh::MeshEntry::Init(const std::vector<VertexAttribute>& Vertices, const s
 	}
 }
 
-Mesh::MaterialProperty::MaterialProperty()
+Model::MaterialProperty::MaterialProperty()
 	:	m_ambientColor(Vec3(0.0, 0.0, 0.0))
 	,	m_diffuseColor(Vec3(0.0, 0.0, 0.0))
 	,	m_specularColor(Vec3(0.0, 0.0, 0.0))
@@ -377,11 +381,11 @@ Mesh::MaterialProperty::MaterialProperty()
 {
 }
 
-Mesh::MaterialProperty::~MaterialProperty()
+Model::MaterialProperty::~MaterialProperty()
 {
 }
 
-void Mesh::MaterialProperty::Init(const aiColor3D ambient, const aiColor3D diffuse, const aiColor3D specular, const aiColor3D emissive)
+void Model::MaterialProperty::Init(const aiColor3D ambient, const aiColor3D diffuse, const aiColor3D specular, const aiColor3D emissive)
 {
 	m_ambientColor = Vec3(ambient.r, ambient.g, ambient.b);
 	m_diffuseColor = Vec3(diffuse.r, diffuse.g, diffuse.b);

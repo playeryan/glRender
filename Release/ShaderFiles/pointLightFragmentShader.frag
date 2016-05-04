@@ -9,12 +9,6 @@ struct BaseLight
 	float DiffuseIntensity;
 };
 
-struct DirectionalLight
-{
-    BaseLight Base;
-	vec3 Direction;
-};
-
 struct Attenuation
 {
 	float Constant;
@@ -27,13 +21,6 @@ struct PointLight
 	BaseLight Base;
 	vec3 Position;
 	Attenuation Atten;
-};
-
-struct SpotLight
-{
-	PointLight Base;
-	vec3 Direction;
-	float CutOffValue;
 };
 
 uniform int pointLightNums;
@@ -114,8 +101,6 @@ vec4 CalcPointLight(PointLight light, vec3 WorldPos, vec3 Normal)
 vec2 CalcTexCoord()
 {
 	return gl_FragCoord.xy / screenSize;
-	//vec2 result = vec2(gl_FragCoord.x / screenSize.x, gl_FragCoord.y / screenSize.y);
-	//return result;
 }
 
 void main()
@@ -130,7 +115,8 @@ void main()
 	for (int i = 0; i < pointLightNums; ++i)
 	{
 		vec4 pointLightColor = CalcPointLight(pointLight[i], WorldPos, Normal);
-		totalLight += pointLightColor;
+		//totalLight += pointLightColor;
+		totalLight = vec4(1.0, 0.5, 0.0, 0.0);
 	}
 	fColor = vec4(Color, 1.0) * totalLight;
 }

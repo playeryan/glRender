@@ -23,5 +23,8 @@ const std::string GBufferFSFileName = std::string(ShaderFilesFolder"GeometryBuff
 const std::string NoneVSFileName = std::string(ShaderFilesFolder"NoneVertexShader.vert");
 const std::string NoneFSFileName = std::string(ShaderFilesFolder"NoneFragmentShader.frag");
 
+const std::string DeferredVSFileName = std::string(ShaderFilesFolder"deferredVertexShader.vert");
+const std::string DeferredFSFileName = std::string(ShaderFilesFolder"deferredFragmentShader.frag");
+
 #endif // !SHADERFILES_H
 

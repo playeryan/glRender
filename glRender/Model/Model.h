@@ -1,6 +1,6 @@
 #pragma once
-#ifndef MESH_H
-#define MESH_H
+#ifndef MODEL_H
+#define MODEL_H
 
 #include <vector>
 #include <map>
@@ -40,11 +40,11 @@ struct VertexAttribute
 	//Vec3			m_bitTangent;
 };
 
-class Mesh
+class Model
 {
 public:
-	Mesh();
-	~Mesh();
+	Model();
+	~Model();
 
 	bool LoadMesh(const std::string& fileName);
 
@@ -62,15 +62,15 @@ private:
 	bool InitMaterials(const aiScene* pScene, const std::string& fileName);
 	bool InitVariousMaterials(const aiMaterial* pMaterial, unsigned int index, aiTextureType type, const std::string& dir);
 
-	void CalcSceneCenterPos(const aiScene* pScene);	// 结构优化空间：移至具体init mesh时，循环计算/
+	void CalcSceneCenterPos(const aiScene* pScene);
 	void Clear();
 
 #define INVALID_MATERIAL 0xFFFFFFFF
 
-	struct MeshEntry
+	struct Mesh
 	{
-		MeshEntry();
-		~MeshEntry();
+		Mesh();
+		~Mesh();
 
 		void Init(const std::vector<VertexAttribute>& Vertices,
 				  const std::vector<unsigned int>& Indices);
@@ -94,7 +94,7 @@ private:
 		Vec3 m_emissveColor;
 	};
 
-	std::vector<MeshEntry>			m_Entries;	// 优化空间：容器存放指针，而不是数据实例/
+	std::vector<Mesh>				m_Meshes;	
 	std::vector<Texture*>			m_diffuseTextures;
 	std::vector<Texture*>			m_heightTextures;
 	std::vector<MaterialProperty>	m_materialProperty;
@@ -107,5 +107,5 @@ private:
 
 
 
-#endif // !MESH_H
+#endif // !MODEL_H
 
