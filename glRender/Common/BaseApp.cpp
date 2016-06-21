@@ -12,6 +12,7 @@ BaseApp::BaseApp(const char* name)
 	, m_frameCount(0)
 	, m_FPS(0.0)
 	, m_appName(name)
+	, m_drawMode(1)
 {
 	for (size_t i = 0; i < 1024; i++)
 	{
@@ -106,6 +107,12 @@ void BaseApp::movementEventPoll()
 	keyboardFunc(GLFW_KEY_D);
 	keyboardFunc(GLFW_KEY_I);
 	keyboardFunc(GLFW_KEY_K);
+
+	keyboardFunc(GLFW_KEY_1);
+	keyboardFunc(GLFW_KEY_2);
+	keyboardFunc(GLFW_KEY_3);
+	keyboardFunc(GLFW_KEY_4);
+	keyboardFunc(GLFW_KEY_5);
 }
 
 void BaseApp::keyboardFunc(int key)
@@ -113,6 +120,7 @@ void BaseApp::keyboardFunc(int key)
 	if (m_keyState[key])
 	{
 		m_pCamera->onKeyBoard(key, m_deltaTime);
+		switchDrawMode(key);
 	}
 }
 
@@ -124,6 +132,30 @@ void BaseApp::mouseFunc(double x, double y)
 void BaseApp::mouseButtonFunc(double x, double y)
 {
 	m_pCamera->onMouseMotion(x, y);
+}
+
+void BaseApp::switchDrawMode(int key)
+{
+	if (key == GLFW_KEY_1)
+	{
+		m_drawMode = 1;
+	}
+	if (key == GLFW_KEY_2)
+	{
+		m_drawMode = 2;
+	}
+	if (key == GLFW_KEY_3)
+	{
+		m_drawMode = 3;
+	}
+	if (key == GLFW_KEY_4)
+	{
+		m_drawMode = 4;
+	}
+	if (key == GLFW_KEY_5)
+	{
+		m_drawMode = 5;
+	}
 }
 
 void instantiateAppDelegate(BaseApp* appImplement)

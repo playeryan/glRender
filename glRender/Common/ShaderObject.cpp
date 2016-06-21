@@ -226,10 +226,10 @@ void DeferredShader::Init()
 {
 	BaseShaderObject::BaseLoadShader();
 
-	m_mvpMatrixLoc = getUniformLocationInShader("mvpMatrix");
 	m_lightMVPMatrixLoc = getUniformLocationInShader("lightMVPMatrix");
 	m_positionTextureLoc = getUniformLocationInShader("PositionMap");
-	m_colorTextureLoc = getUniformLocationInShader("ColorMap");
+	m_diffuseTextureLoc = getUniformLocationInShader("DiffuseMap");
+	m_specularTextureLoc = getUniformLocationInShader("SpecularMap");
 	m_normalTextureLoc = getUniformLocationInShader("NormalMap");
 	m_shadowMapTextureLoc = getUniformLocationInShader("shadowMapTexture");
 	m_eyeWorldPosLoc = getUniformLocationInShader("eyeWorldPos");
@@ -237,11 +237,7 @@ void DeferredShader::Init()
 	m_specularPowerLoc = getUniformLocationInShader("specularPower");
 	m_screenSizeLoc = getUniformLocationInShader("screenSize");
 	m_ambientIntensity = getUniformLocationInShader("ambientIntensity");
-}
-
-void DeferredShader::setMVPMatrix(const Matrix44 & mvp)
-{
-	glUniformMatrix4fv(m_mvpMatrixLoc, 1, true, mvp.m);
+	m_drawMode = getUniformLocationInShader("drawMode");
 }
 
 void DeferredShader::setLightMVPMatrix(const Matrix44 & mvp)
@@ -254,9 +250,14 @@ void DeferredShader::setPositionTextureUnit(unsigned int TextureUnit)
 	glUniform1i(m_positionTextureLoc, TextureUnit);
 }
 
-void DeferredShader::setColorTextureUnit(unsigned int TextureUnit)
+void DeferredShader::setDiffuseTextureUnit(unsigned int TextureUnit)
 {
-	glUniform1i(m_colorTextureLoc, TextureUnit);
+	glUniform1i(m_diffuseTextureLoc, TextureUnit);
+}
+
+void DeferredShader::setSpecularTextureUnit(unsigned int TextureUnit)
+{
+	glUniform1i(m_specularTextureLoc, TextureUnit);
 }
 
 void DeferredShader::setNormalTextureUnit(unsigned int TextureUnit)
@@ -292,6 +293,11 @@ void DeferredShader::setScreenSize(unsigned int width, unsigned int height)
 void DeferredShader::setAmbientIntensity(float intensity)
 {
 	glUniform1f(m_ambientIntensity, intensity);
+}
+
+void DeferredShader::setDrawMode(int mode)
+{
+	glUniform1i(m_drawMode, mode);
 }
 
 /**********************DirLightShader, inherit LightShader******************/
@@ -489,8 +495,11 @@ void GeometryBufferShader::Init()
 	m_mvpMatrixLoc = getUniformLocationInShader("mvpMatrix");
 	m_modelMatrixLoc = getUniformLocationInShader("modelMatrix");
 	m_normalMatrixLoc = getUniformLocationInShader("normalMatrix");
-	m_colorTextureUnitLoc = getUniformLocationInShader("ColorMap");
+	m_diffuseTextureUnitLoc = getUniformLocationInShader("DiffuseMap");
+	m_specularTextureUnitLoc = getUniformLocationInShader("SpecularMap");
 	m_heightTextureUnitLoc = getUniformLocationInShader("HeightMap");
+	m_opacityTextureUnitLoc = getUniformLocationInShader("OpacityMap");
+	m_hasOpacityLoc = getUniformLocationInShader("hasOpacityMap");
 }
 
 void GeometryBufferShader::SetMVPMatrix(const Matrix44 & mvp)
@@ -508,14 +517,39 @@ void GeometryBufferShader::SetNormalMatrix(const Matrix44 & m)
 	glUniformMatrix4fv(m_normalMatrixLoc, 1, true, m.m);
 }
 
-void GeometryBufferShader::SetColorTextureUnit(unsigned int textureUnit)
+void GeometryBufferShader::SetDiffuseTextureUnit(unsigned int textureUnit)
 {
-	glUniform1i(m_colorTextureUnitLoc, textureUnit);
+	glUniform1i(m_diffuseTextureUnitLoc, textureUnit);
+}
+
+void GeometryBufferShader::SetSpecularTextureUnit(unsigned int textureUnit)
+{
+	glUniform1i(m_specularTextureUnitLoc, textureUnit);
 }
 
 void GeometryBufferShader::SetHeightTextureUnit(unsigned int textureUnit)
 {
 	glUniform1i(m_heightTextureUnitLoc, textureUnit);
+}
+
+void GeometryBufferShader::SetOpacityTextureUnit(unsigned int textureUnit)
+{
+	glUniform1i(m_opacityTextureUnitLoc, textureUnit);
+}
+
+void GeometryBufferShader::SetHasOpacity(GLboolean flag)
+{
+	glUniform1i(m_hasOpacityLoc, flag);
+	if (flag)
+	{
+		glEnable(GL_BLEND);
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
+	else
+	{
+		glDisable(GL_BLEND);
+	}
 }
 
 /****************NoneShader, inherit BaseShaderObject******************/

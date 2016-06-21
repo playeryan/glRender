@@ -66,6 +66,9 @@
     <ClCompile Include="Model\Model.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Common\Environment.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Tools\LoadShaders.h">
@@ -237,6 +240,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Model\Model.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\Environment.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

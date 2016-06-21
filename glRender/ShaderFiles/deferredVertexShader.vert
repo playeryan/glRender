@@ -4,11 +4,10 @@ layout (location = 1) in vec2 texCoords;
 
 out vec2 TexCoords;
 
-uniform mat4 mvpMatrix;
 
 void main()
 {
-	//gl_Position = mvpMatrix * vec4(position, 1.0f);
+	// 顶点变换已在GeometryBufferShader中完成, 并存储数据在GeometryBuffer中，作为本shader的输入/
     gl_Position = vec4(position, 1.0f);
     TexCoords = texCoords;
 }

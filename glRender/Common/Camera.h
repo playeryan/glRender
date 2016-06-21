@@ -15,7 +15,7 @@ public:
 	void setCamera(Point4 eye, Vec4 target, Vec4 up);
 	void setWorldPos(Point4 pos);
 	void setScale(Vec3 factor);
-	void setProjectionMatrix(float fov, float ratio, float nearClip, float farClip);
+	void setProjectionMatrix(float fov, int width, int height, float nearClip, float farClip);
 	void recoverModelTransform();
 	Matrix44 getMVPMatrix();
 	Matrix44 getModelMatrix();

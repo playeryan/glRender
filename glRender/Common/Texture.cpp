@@ -1,4 +1,5 @@
 #include "Texture.h"
+#include "Environment.h"
 
 Texture::Texture(const std::string & FileName, GLenum TextureTarget)
 	:	m_fileName(FileName.c_str())
@@ -22,28 +23,28 @@ bool Texture::Load()
 		return false;
 	}
 
+	//m_textureData->printFormatStr();
 	//printf("file: %s, load success\n", m_fileName.c_str());
-	//printf("texture format: %s\n", m_texture->getMapFormatStr().c_str());
 	glGenTextures(1, &m_textureObj);
 	glBindTexture(m_textureTarget, m_textureObj);
-	glTexImage2D(m_textureTarget, 0, GL_RGB, (GLsizei)m_textureData->getBMPWidth(), (GLsizei)m_textureData->getBMPHeight(), 0, m_textureData->getMapFormat(), GL_UNSIGNED_BYTE, m_textureData->getPixels());
+	glTexImage2D(m_textureTarget, 0, m_textureData->getMapFormat(), (GLsizei)m_textureData->getBMPWidth(), (GLsizei)m_textureData->getBMPHeight(), 0, m_textureData->getMapFormat(), GL_UNSIGNED_BYTE, m_textureData->getPixels());
 	
 	// 为消除摩尔纹，使用mipmap贴图/
-	glTexParameterf(m_textureTarget, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameterf(m_textureTarget, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glGenerateMipmap(m_textureTarget);
+	// Parameters
 	// 优先使用各向异性过滤/
-	if (glewIsExtensionSupported("GL_EXT_texture_filter_anisotropic"))
+	if (Environment::getInstance()->isSupportAnisotropic())
 	{
-		GLfloat fLargest;
-		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &fLargest);
-		glTexParameterf(m_textureTarget, GL_TEXTURE_MAX_ANISOTROPY_EXT, fLargest);
+		GLint fLargest;
+		glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &fLargest);
+		//printf("anisotropic largest level: %d\n", fLargest);
+		glTexParameteri(m_textureTarget, GL_TEXTURE_MAX_ANISOTROPY_EXT, (GLint)fLargest);
 	}
-	else
-	{
-		glTexParameterf(m_textureTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		glTexParameterf(m_textureTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	}
+
+	glTexParameteri(m_textureTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(m_textureTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(m_textureTarget, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(m_textureTarget, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glBindTexture(m_textureTarget, 0);
 	//glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 

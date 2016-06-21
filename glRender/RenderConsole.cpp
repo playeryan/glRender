@@ -18,11 +18,10 @@
 #include "ShaderFiles\ShaderFiles.h"
 
 using namespace std; 
+using namespace Light;
 
 Vec4	targetVector		=	Vec4(0, 0, -1, 0);
 Vec4	upVector			=	Vec4(0, 1, 0, 0);
-float	specularIntensity	=	0.6f;
-float	specularPower		=	128;
 
 // inherit from BaseApp
 class GLrender	: public BaseApp
@@ -37,7 +36,7 @@ public:
 		,	m_pGameGBufferEffect(NULL)
 		,	m_pGameStencilEffect(NULL)
 		,	m_pGameShadowEffect(NULL)
-		,	m_pMesh(NULL)
+		,	m_pModel(NULL)
 	{}
 	~GLrender()
 	{
@@ -48,7 +47,7 @@ public:
 		SAFE_DELETE_POINTER(m_pGameGBufferEffect);
 		SAFE_DELETE_POINTER(m_pGameStencilEffect);
 		SAFE_DELETE_POINTER(m_pGameShadowEffect);
-		SAFE_DELETE_POINTER(m_pMesh);
+		SAFE_DELETE_POINTER(m_pModel);
 	}
 
 	bool init() override
@@ -60,8 +59,10 @@ public:
 
 		m_pGameGBufferEffect = new GeometryBufferShader(GBufferVSFileName.c_str(), GBufferFSFileName.c_str());
 		m_pGameGBufferEffect->Bind();
-		m_pGameGBufferEffect->SetColorTextureUnit(GL_TEXTURE0);
-		m_pGameGBufferEffect->SetHeightTextureUnit(GL_TEXTURE1);
+		m_pGameGBufferEffect->SetDiffuseTextureUnit(TextureUnitIndex::DiffuseIndex);
+		m_pGameGBufferEffect->SetSpecularTextureUnit(TextureUnitIndex::SpecularIndex);
+		m_pGameGBufferEffect->SetHeightTextureUnit(TextureUnitIndex::HeightIndex);
+		m_pGameGBufferEffect->SetOpacityTextureUnit(TextureUnitIndex::OpacityIndex);
 
 		//m_pGameDirLightEffect = new DirLightShader(DirLightVSFileName.c_str(), DirLightFSFileName.c_str());
 		//m_pGameDirLightEffect->Bind();
@@ -82,12 +83,13 @@ public:
 		m_pGamePointLightEffect->setSpecularIntensity(specularIntensity);
 		m_pGamePointLightEffect->setSpecularPower(specularPower);
 		m_pGamePointLightEffect->setPositionTextureUnit(GeometryBuffer::GeometryBufferTextureType_Position);
-		m_pGamePointLightEffect->setColorTextureUnit(GeometryBuffer::GeometryBufferTextureType_Diffuse);
+		m_pGamePointLightEffect->setDiffuseTextureUnit(GeometryBuffer::GeometryBufferTextureType_Diffuse);
+		m_pGamePointLightEffect->setSpecularTextureUnit(GeometryBuffer::GeometryBufferTextureType_Specular);
 		m_pGamePointLightEffect->setNormalTextureUnit(GeometryBuffer::GeometryBufferTextureType_Normal);
 		m_pGamePointLightEffect->setScreenSize(WINDOW_WIDTH, WINDOW_HEIGHT);
 		m_pGamePointLightEffect->setAmbientIntensity(Light::AmbientIntensity);
 
-		m_pGameStencilEffect = new NoneShader(NoneVSFileName.c_str(), NoneFSFileName.c_str());
+		//m_pGameStencilEffect = new NoneShader(NoneVSFileName.c_str(), NoneFSFileName.c_str());
 
 		//m_pGameShadowEffect = new ShadowMapShader(pShadowVSFileName, pShadowFSFileName);
 		
@@ -96,18 +98,18 @@ public:
 		//	return false;
 		//}
 
-		m_pMesh = new Model();
+		m_pModel = new Model();
 		m_pPointLightSphere = new Model();
 		m_pDirLightQuad = new Model();
 		// 加载不同的模型文件/
-		bool flag = m_pMesh->LoadMesh("Resource/crytek-sponza/sponza.obj")
-			&& m_pPointLightSphere->LoadMesh("Resource/sphere.obj")
-			&& m_pDirLightQuad->LoadMesh("Resource/quad.obj");
+		bool flag = m_pModel->LoadModel("Resource/crytek-sponza/sponza.obj")
+			&& m_pPointLightSphere->LoadModel("Resource/sphere.obj")
+			&& m_pDirLightQuad->LoadModel("Resource/quad.obj");
 
-		Point3 sceneCenter = m_pMesh->GetSceneCenterPos();
+		Point3 sceneCenter = m_pModel->GetSceneCenterPos();
 		m_pCamera->setCamera(Point4(sceneCenter.x, sceneCenter.y, sceneCenter.z, 1.0f), targetVector, upVector);
-		m_pCamera->setDistanceFactor(m_pMesh->getSuitableDistanceFactor());
-		m_pCamera->setProjectionMatrix(65.0, 4 / 3, 1, 10000);
+		m_pCamera->setDistanceFactor(m_pModel->getSuitableDistanceFactor());
+		m_pCamera->setProjectionMatrix(70.0, WINDOW_WIDTH, WINDOW_HEIGHT, 1, 10000);
 
 		InitLights();
 
@@ -139,7 +141,7 @@ public:
 		m_pGameGBufferEffect->SetModelMatrix(m_pCamera->getModelMatrix());
 		m_pGameGBufferEffect->SetNormalMatrix(m_pCamera->getNormTransformMatrix());
 
-		m_pMesh->Render();
+		m_pModel->Render(m_pGameGBufferEffect);
 		m_geometryBufferObject.UnBind();
 		// G-Buffer处理完毕，关闭深度检测/
 		//glDepthMask(GL_FALSE);
@@ -165,7 +167,7 @@ public:
 
 		m_pGameStencilEffect->SetMVPMatrix(m_pCamera->getMVPMatrix());
 
-		m_pPointLightSphere->Render();
+		//m_pPointLightSphere->Render();
 		m_pCamera->recoverModelTransform();
 	}
 	void PointLightProcessing()
@@ -176,6 +178,9 @@ public:
 		//glBlendEquation(GL_FUNC_ADD);
 		//glBlendFunc(GL_ONE, GL_ONE);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		m_pGamePointLightEffect->Bind();
+		m_pGamePointLightEffect->setDrawMode(m_drawMode);
+		//printf("current draw mode: %d\n", m_drawMode);
 		// 设置点光源位置/
 		static float pointLightMoveSpeed = 160.0f;
 		static float pointLightMoveParam = 0.0f;
@@ -222,7 +227,6 @@ public:
 		//m_pCamera->setWorldPos(m_pointLights[pointLightIndex].PointLightPos);
 
 		m_pGamePointLightEffect->setPointLightsParams(m_pointLights.size(), &m_pointLights[0]);
-		m_pGamePointLightEffect->setMVPMatrix(m_pCamera->getMVPMatrix());
 
 		//m_pPointLightSphere->Render();
 		Model::RenderQuad();
@@ -291,7 +295,6 @@ private:
 			float randValueG = (rand() % 100) / 100.0f;
 			float randValueB = (rand() % 100) / 100.0f;
 			float randValueD = (rand() % 30) / 100.0f + 0.05f;
-			printf("rand color: %f, %f, %f, %f\n", randValueR, randValueG, randValueB, randValueD);
 			m_pointLights[i].Color = Vec3(randValueR, randValueG, randValueB);
 			m_pointLights[i].DiffuseIntensity = randValueD;
 			m_pointLights[i].AttenuationFactor.Constant = 1.0f;
@@ -305,14 +308,10 @@ private:
 			float randValueX = -rand() % 1200 + 600;
 			float randValueY = -rand() % 600 + 300;
 			float randValueZ = -rand() % 400 + 200;
-			printf("rand pos: %f, %f, %f\n", randValueX, randValueY, randValueZ);
-			Point4 sceneCenterPos = Point4(m_pMesh->GetSceneCenterPos());
-			//m_pointLights[i].PointLightPos = Point4(sceneCenterPos.x + randValueX,
-			//	sceneCenterPos.y + randValueY,
-			//	sceneCenterPos.z + randValueZ);
-			m_pointLightsOriginPos[i] = Point4(sceneCenterPos.x + randValueX,
-				sceneCenterPos.y + randValueY,
-				sceneCenterPos.z + randValueZ);
+			Point4 sceneCenterPos = Point4(m_pModel->GetSceneCenterPos());
+			m_pointLightsOriginPos[i] = Point4(	sceneCenterPos.x + randValueX,
+												sceneCenterPos.y + randValueY,
+												sceneCenterPos.z + randValueZ	);
 		}
 
 		m_spotLights[0].DiffuseIntensity = 0.8f;
@@ -331,7 +330,7 @@ private:
 	GeometryBufferShader*	m_pGameGBufferEffect;
 	NoneShader*				m_pGameStencilEffect;
 	ShadowMapShader*		m_pGameShadowEffect;
-	Model*					m_pMesh;
+	Model*					m_pModel;
 	Model*					m_pDirLightQuad;
 	Model*					m_pPointLightSphere;
 	DirectionalLight		m_dirLight;

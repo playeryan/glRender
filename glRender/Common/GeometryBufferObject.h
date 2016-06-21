@@ -21,6 +21,7 @@ public:
 		GeometryBufferTextureType_Diffuse,
 		GeometryBufferTextureType_Normal,
 		//GeometryBufferTextureType_TexCoord,
+		GeometryBufferTextureType_Specular,
 		GeometryBufferNumTextures
 	};
 

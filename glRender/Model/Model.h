@@ -11,6 +11,7 @@
 #include <assimp\scene.h>
 #include <assimp\Importer.hpp>
 #include <assimp\postprocess.h>
+#include <Common\ShaderObject.h>
 
 #include "../Common/Texture.h"
 #include "../Macros/glMacros.h"
@@ -46,9 +47,9 @@ public:
 	Model();
 	~Model();
 
-	bool LoadMesh(const std::string& fileName);
+	bool LoadModel(const std::string& fileName);
 
-	void Render();
+	void Render(GeometryBufferShader* shaderobject);
 
 	Point3 GetSceneCenterPos();
 	float getSuitableDistanceFactor();
@@ -96,7 +97,9 @@ private:
 
 	std::vector<Mesh>				m_Meshes;	
 	std::vector<Texture*>			m_diffuseTextures;
+	std::vector<Texture*>			m_specularTextures;
 	std::vector<Texture*>			m_heightTextures;
+	std::vector<Texture*>			m_opacityTextures;
 	std::vector<MaterialProperty>	m_materialProperty;
 	Point3 m_SceneCenterPos;
 	Point3 m_SceneMaxPos;

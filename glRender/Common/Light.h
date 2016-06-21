@@ -5,18 +5,18 @@
 #include "Math/Vec3.h"
 #include "Math/Vec4.h"
 
-static const int pointLightNum = 32;
-static const int spotLightNum = 1;
-
 namespace Light
 {
-	const float AmbientIntensity = 0.2f;
+	static const int pointLightNum = 32;
+	static const int spotLightNum = 1;
+	static const float AmbientIntensity = 0.2f;		// 对所有光源来说，环境光强度应相同/
+	static float specularIntensity = 1.0f;
+	static float specularPower = 10;
 }
 
 struct BaseLight
 {
 	Vec3 Color;
-	//float AmbientIntensity; // 对所有光源来说，环境光强度应相同/
 	float DiffuseIntensity;
 };
 

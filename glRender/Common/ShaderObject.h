@@ -8,6 +8,7 @@
 #include "Math/Matrix44.h"
 #include "Light.h"
 
+using namespace Light;
 
 /****************************BaseShaderObject***********************************/
 class BaseShaderObject
@@ -109,10 +110,10 @@ public:
 
 	virtual void Init();
 
-	void setMVPMatrix(const Matrix44& mvp);
 	void setLightMVPMatrix(const Matrix44& mvp);	// for shadow map
 	void setPositionTextureUnit(unsigned int TextureUnit);
-	void setColorTextureUnit(unsigned int TextureUnit);
+	void setDiffuseTextureUnit(unsigned int TextureUnit);
+	void setSpecularTextureUnit(unsigned int TextureUnit);
 	void setNormalTextureUnit(unsigned int TextureUnit);
 	void setShadowMapTexUnit(unsigned int TextureUnit);
 	void setEyeWorldPos(Point4 position);
@@ -120,11 +121,12 @@ public:
 	void setSpecularPower(float power);
 	void setScreenSize(unsigned int width, unsigned int height);
 	void setAmbientIntensity(float intensity);
+	void setDrawMode(int mode);
 private:
-	GLuint m_mvpMatrixLoc;
 	GLuint m_lightMVPMatrixLoc;
 	GLuint m_positionTextureLoc;
-	GLuint m_colorTextureLoc;
+	GLuint m_diffuseTextureLoc;
+	GLuint m_specularTextureLoc;
 	GLuint m_normalTextureLoc;
 	GLuint m_shadowMapTextureLoc;
 	GLuint m_eyeWorldPosLoc;
@@ -132,6 +134,7 @@ private:
 	GLuint m_specularPowerLoc;
 	GLuint m_screenSizeLoc;
 	GLuint m_ambientIntensity;
+	GLuint m_drawMode;
 };
 
 /**********************DirLightShader, inherit DeferredShader******************/
@@ -235,15 +238,21 @@ public:
 	void SetMVPMatrix(const Matrix44& mvp);
 	void SetModelMatrix(const Matrix44& m);
 	void SetNormalMatrix(const Matrix44& m);
-	void SetColorTextureUnit(unsigned int textureUnit);
+	void SetDiffuseTextureUnit(unsigned int textureUnit);
+	void SetSpecularTextureUnit(unsigned int textureUnit);
 	void SetHeightTextureUnit(unsigned int textureUnit);
+	void SetOpacityTextureUnit(unsigned int textureUnit);
+	void SetHasOpacity(GLboolean flag);
 
 private:
 	GLuint m_mvpMatrixLoc;
 	GLuint m_modelMatrixLoc;
 	GLuint m_normalMatrixLoc;
-	GLuint m_colorTextureUnitLoc;
+	GLuint m_diffuseTextureUnitLoc;
+	GLuint m_specularTextureUnitLoc;
 	GLuint m_heightTextureUnitLoc;
+	GLuint m_opacityTextureUnitLoc;
+	GLuint m_hasOpacityLoc;
 };
 
 /****************NoneShader, inherit BaseShaderObject******************/

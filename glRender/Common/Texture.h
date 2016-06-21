@@ -9,7 +9,25 @@
 
 const std::string NoneTexture		=	"NoneTexture";
 const std::string DiffuseTexture	=	"DiffuseTexture";
+const std::string SpecularTexture	=	"SpecularTexture";
 const std::string HeightTexture		=	"HeightTexture";
+const std::string OpacityTexture	=	"OpacityTexture";
+
+enum TextureUnit
+{
+	Diffuse = GL_TEXTURE0,
+	Specular = GL_TEXTURE1,
+	Height = GL_TEXTURE2,
+	Opacity = GL_TEXTURE3,
+};
+
+enum TextureUnitIndex
+{
+	DiffuseIndex = 0,
+	SpecularIndex,
+	HeightIndex,
+	OpacityIndex,
+};
 
 class Texture
 {

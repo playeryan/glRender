@@ -157,6 +157,7 @@
     <ClCompile Include="Common\Light.cpp" />
     <ClCompile Include="Common\ShaderObject.cpp" />
     <ClCompile Include="Common\Texture.cpp" />
+    <ClCompile Include="Common\Environment.cpp" />
     <ClCompile Include="Math\Matrix44.cpp" />
     <ClCompile Include="Math\Quaternion.cpp" />
     <ClCompile Include="Math\Vec3.cpp" />
@@ -171,6 +172,7 @@
   <ItemGroup>
     <ClInclude Include="Common\BaseApp.h" />
     <ClInclude Include="Common\Camera.h" />
+    <ClInclude Include="Common\Environment.h" />
     <ClInclude Include="Common\FrameBufferObject.h" />
     <ClInclude Include="Common\GeometryBufferObject.h" />
     <ClInclude Include="Common\Light.h" />

@@ -29,12 +29,21 @@ public:
 	void keyboardFunc(int key);
 	void mouseFunc(double x, double y);
 	void mouseButtonFunc(double x, double y);
+	void switchDrawMode(int key);
 
 	// class member region start
 public:
 	Camera*				m_pCamera;
 	std::vector<bool>	m_keyState;
 	float				m_deltaTime;
+	/*control draw mode
+	* key_1: common lighting
+	* key_2: position
+	* key_3: diffuse
+	* key_4: normal
+	* key_5: specular
+	*/
+	unsigned int		m_drawMode;
 private:
 	float				m_lastTime;
 	float				m_elapsedTime;

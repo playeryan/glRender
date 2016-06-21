@@ -41,7 +41,7 @@ bool GeometryBuffer::Init(unsigned int windowWidth, unsigned int windowHeight)
 	for (size_t i = 0; i < m_textures.size(); i++)
 	{
 		glBindTexture(GL_TEXTURE_2D, m_textures[i]);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, windowWidth, windowHeight, 0, GL_RGB, GL_FLOAT, BUFFER_OFFSET(0));
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, windowWidth, windowHeight, 0, GL_RGBA, GL_FLOAT, BUFFER_OFFSET(0));
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, m_textures[i], 0);

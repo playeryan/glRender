@@ -40,6 +40,11 @@ Bitmap* Bitmap::bitmapFromFile(std::string filePath)
 	return bmp;
 }
 
+void Bitmap::printFormatStr()
+{
+	printf("format: %s\n", getMapFormatStr().c_str());
+}
+
 unsigned char * Bitmap::getPixels()
 {
 	return m_pixels;
@@ -61,8 +66,10 @@ GLenum Bitmap::getMapFormat()
 	switch (m_format)
 	{
 	case Bitmap::Format_Grayscale:
+		format = GL_RED;
 		break;
 	case Bitmap::Format_GrayscaleAlpha:
+		format = GL_RG;
 		break;
 	case Bitmap::Format_RGB:
 		format = GL_RGB;

@@ -26,7 +26,8 @@ const int NR_LIGHTS = 32;
 
 uniform sampler2D PositionMap;
 uniform sampler2D NormalMap;
-uniform sampler2D ColorMap;
+uniform sampler2D DiffuseMap;
+uniform sampler2D SpecularMap;
 uniform sampler2D shadowMapTexture;
 uniform int pointLightNums;
 uniform PointLight pointLight[NR_LIGHTS];
@@ -35,6 +36,7 @@ uniform vec2 screenSize;
 uniform float ambientIntensity;
 uniform float specularIntensity;
 uniform float specularPower;
+uniform int drawMode;
 
 float CalcShadowFactor(vec4 LightSpacePosition)
 {
@@ -57,7 +59,7 @@ float CalcShadowFactor(vec4 LightSpacePosition)
 }
 
 // 假设环境光分量与光源无关，仅计算漫反射与镜面反射/
-vec4 CalcLightInternal(BaseLight Light, vec3 LightDirection,  vec3 WorldPos, vec3 Normal, float ShadowFactor)
+vec4 CalcLightInternal(BaseLight Light, vec3 LightDirection,  vec3 WorldPos, vec3 Normal, float SpecIntensity, float ShadowFactor)
 {
     // ambient color
     //vec4 ambientColor = vec4(Light.Color * ambientIntensity, 1.0f);
@@ -77,13 +79,14 @@ vec4 CalcLightInternal(BaseLight Light, vec3 LightDirection,  vec3 WorldPos, vec
         vec3 halfVector = normalize(LightDirection + vertexToEye);
         float specFactor = max(0.0, dot(Normal, halfVector));
         specFactor = pow(specFactor, specularPower);
-        specColor = vec4(Light.Color * specularIntensity * specFactor, 1.0f);
+		//specColor = vec4(Light.Color * specularIntensity * specFactor, 1.0f);
+		specColor = vec4(Light.Color * SpecIntensity * specFactor, 1.0f);
     }
 
     return ShadowFactor * (diffuseColor + specColor);
 }
 
-vec4 CalcPointLight(PointLight light, vec3 WorldPos, vec3 Normal)
+vec4 CalcPointLight(PointLight light, vec3 WorldPos, vec3 Normal, float SpecIntensity)
 {
     vec3 LightDirection = WorldPos - light.Position;
     float distance = length(LightDirection);
@@ -91,7 +94,7 @@ vec4 CalcPointLight(PointLight light, vec3 WorldPos, vec3 Normal)
 
     //float shadowFactor = CalcShadowFactor(LightSpacePosition);
     float shadowFactor = 1.0;
-    vec4 outColor = CalcLightInternal(light.Base, LightDirection, WorldPos, Normal, shadowFactor);
+    vec4 outColor = CalcLightInternal(light.Base, LightDirection, WorldPos, Normal, SpecIntensity, shadowFactor);
 	float attenuation = light.Atten.Constant +
                         light.Atten.Linear * distance +
                         light.Atten.Exp * distance * distance;
@@ -109,10 +112,11 @@ void main()
 	//vec2 TexCoords = CalcTexCoord();
     // Retrieve data from gbuffer
     vec3 FragPos = texture(PositionMap, TexCoords).xyz;
-    vec3 Diffuse = texture(ColorMap, TexCoords).xyz;
+    vec3 Diffuse = texture(DiffuseMap, TexCoords).xyz;
 	vec3 Normal = texture(NormalMap, TexCoords).xyz;
 	Normal = normalize(Normal);
-    //float Specular = texture(gAlbedoSpec, TexCoords).a;
+	vec3 specTex = texture(SpecularMap, TexCoords).xyz;
+	float specIntensity = texture(SpecularMap, TexCoords).r;
     
 	vec4 totalLight = vec4(0.0, 0.0, 0.0, 0.0);
 	// 环境光与光源无关/
@@ -120,9 +124,26 @@ void main()
 	totalLight += ambientLight;
 	for (int i = 0; i < pointLightNums; ++i)
 	{
-		vec4 pointLightColor = CalcPointLight(pointLight[i], FragPos, Normal);
+		vec4 pointLightColor = CalcPointLight(pointLight[i], FragPos, Normal, specIntensity);
 		totalLight += pointLightColor;
 	}
 	
-	FragColor = vec4(Diffuse, 1.0) * totalLight;   
+	//FragColor = vec4(Diffuse, 1.0) * totalLight;   
+	if (drawMode == 1){
+		FragColor = vec4(Diffuse, 1.0) * totalLight;
+	}
+	else if (drawMode == 2){
+		FragColor = vec4(FragPos, 1.0);
+	}
+	else if (drawMode == 3){
+		FragColor = vec4(Diffuse, 1.0);
+	}
+	else if (drawMode == 4){
+		FragColor = vec4(Normal, 1.0);
+	}
+	else if (drawMode == 5){
+		//FragColor = vec4(specTex, 1.0);
+		FragColor = vec4(vec3(specIntensity), 1.0);
+		//FragColor = vec4(Diffuse, specIntensity);
+	}
 }

@@ -36,7 +36,7 @@ Model::~Model()
 	Clear();
 }
 
-bool Model::LoadMesh(const std::string & fileName)
+bool Model::LoadModel(const std::string & fileName)
 {
 	Clear();
 	
@@ -64,19 +64,31 @@ bool Model::LoadMesh(const std::string & fileName)
 	return flag;
 }
 
-void Model::Render()
+void Model::Render(GeometryBufferShader* shaderobject)
 {
 	for (size_t i = 0; i < m_Meshes.size(); i++)
 	{
 		const unsigned int materialIndex = m_Meshes[i].m_MaterialIndex;
 		if (m_diffuseTextures[materialIndex])
 		{
-			m_diffuseTextures[materialIndex]->Bind(GL_TEXTURE0);
-			// do something about multi material/
+			m_diffuseTextures[materialIndex]->Bind(TextureUnit::Diffuse);
+		}
+		if (m_specularTextures[materialIndex])
+		{
+			m_specularTextures[materialIndex]->Bind(TextureUnit::Specular);
 		}
 		if (m_heightTextures[materialIndex])
 		{
-			m_heightTextures[materialIndex]->Bind(GL_TEXTURE1);
+			m_heightTextures[materialIndex]->Bind(TextureUnit::Height);
+		}
+		if (m_opacityTextures[materialIndex])
+		{
+			m_opacityTextures[materialIndex]->Bind(TextureUnit::Opacity);
+			shaderobject->SetHasOpacity(GL_TRUE);
+		}
+		else
+		{
+			shaderobject->SetHasOpacity(GL_FALSE);
 		}
 
 		glBindVertexArray(m_Meshes[i].m_VertexArray);
@@ -86,8 +98,20 @@ void Model::Render()
 		// unbind texture unit
 		if (materialIndex < m_diffuseTextures.size() && m_diffuseTextures[materialIndex])
 		{
-			m_diffuseTextures[materialIndex]->UnBind(GL_TEXTURE0);
+			m_diffuseTextures[materialIndex]->UnBind(TextureUnit::Diffuse);
 		}
+		if (materialIndex < m_specularTextures.size() && m_specularTextures[materialIndex])
+		{
+			m_specularTextures[materialIndex]->UnBind(TextureUnit::Specular);
+		}
+		if (materialIndex < m_heightTextures.size() && m_heightTextures[materialIndex])
+		{
+			m_heightTextures[materialIndex]->UnBind(TextureUnit::Height);
+		}
+		//if (materialIndex < m_opacityTextures.size() && m_opacityTextures[materialIndex])
+		//{
+		//	m_heightTextures[materialIndex]->UnBind(TextureUnit::Opacity);
+		//}
 	}
 }
 
@@ -95,11 +119,15 @@ bool Model::InitFromScene(const aiScene * pScene, const std::string & fileName)
 {
 	m_Meshes.resize(pScene->mNumMeshes);
 	m_diffuseTextures.resize(pScene->mNumMaterials);
-	m_heightTextures.resize(pScene->mNumMaterials);
+	m_specularTextures.resize(pScene->mNumMaterials);
+	m_heightTextures.resize(pScene->mNumMaterials);		
+	m_opacityTextures.resize(pScene->mNumMaterials);	//仔细考虑，各类型texture数量不一定相等，此处resize参数也需有依据/
 	for (size_t i = 0; i < pScene->mNumMaterials; i++)
 	{
 		m_diffuseTextures[i] = NULL;
 		m_heightTextures[i] = NULL;
+		m_heightTextures[i] = NULL;
+		m_opacityTextures[i] = NULL;
 	}
 
 	for (size_t i = 0; i < m_Meshes.size(); i++)
@@ -150,6 +178,7 @@ void Model::InitMesh(unsigned int index, const aiMesh * paiMesh)
 	m_Meshes[index].Init(Vertices, Indices);
 }
 
+// 仿照loadMaterialTextures(...)来写/
 bool Model::InitMaterials(const aiScene * pScene, const std::string & fileName)
 {
 	std::string::size_type SlashIndex = fileName.find_last_of("/");
@@ -185,13 +214,63 @@ bool Model::InitMaterials(const aiScene * pScene, const std::string & fileName)
 
 		m_materialProperty[i].Init(ambientColor, diffuseColor, specularColor, emissiveColor);
 
-		printf("current material diffuse result: %d\n", pMaterial->GetTextureCount(aiTextureType_DIFFUSE));
-		printf("current material ambient result: %d\n", pMaterial->GetTextureCount(aiTextureType_AMBIENT));
-		printf("current material specular result: %d\n", pMaterial->GetTextureCount(aiTextureType_SPECULAR));
-		printf("current material height result: %d\n", pMaterial->GetTextureCount(aiTextureType_HEIGHT));
+		//if (pMaterial->GetTextureCount(aiTextureType_DIFFUSE) != 0)
+		//{
+		//	printf("current material diffuse result: %d\n", pMaterial->GetTextureCount(aiTextureType_DIFFUSE));
+		//}
+		//if (pMaterial->GetTextureCount(aiTextureType_AMBIENT) != 0)
+		//{
+		//	printf("current material ambient result: %d\n", pMaterial->GetTextureCount(aiTextureType_AMBIENT));
+		//}
+		//if (pMaterial->GetTextureCount(aiTextureType_SPECULAR) != 0)
+		//{
+		//	printf("current material specular result: %d\n", pMaterial->GetTextureCount(aiTextureType_SPECULAR));
+		//}
+		//if (pMaterial->GetTextureCount(aiTextureType_HEIGHT) != 0)
+		//{
+		//	printf("current material height result: %d\n", pMaterial->GetTextureCount(aiTextureType_HEIGHT));
+		//}
+		//if (pMaterial->GetTextureCount(aiTextureType_NONE) != 0)
+		//{
+		//	printf("current material none result: %d\n", pMaterial->GetTextureCount(aiTextureType_NONE));
+		//}
+		//if (pMaterial->GetTextureCount(aiTextureType_EMISSIVE) != 0)
+		//{
+		//	printf("current material emissive result: %d\n", pMaterial->GetTextureCount(aiTextureType_EMISSIVE));
+		//}
+		//if (pMaterial->GetTextureCount(aiTextureType_NORMALS) != 0)
+		//{
+		//	printf("current material normals result: %d\n", pMaterial->GetTextureCount(aiTextureType_NORMALS));
+		//}
+		//if (pMaterial->GetTextureCount(aiTextureType_SHININESS) != 0)
+		//{
+		//	printf("current material shininess result: %d\n", pMaterial->GetTextureCount(aiTextureType_SHININESS));
+		//}
+		//if (pMaterial->GetTextureCount(aiTextureType_OPACITY) != 0)
+		//{
+		//	printf("current material opacity result: %d\n", pMaterial->GetTextureCount(aiTextureType_OPACITY));
+		//}
+		//if (pMaterial->GetTextureCount(aiTextureType_DISPLACEMENT) != 0)
+		//{
+		//	printf("current material displacement result: %d\n", pMaterial->GetTextureCount(aiTextureType_DISPLACEMENT));
+		//}
+		//if (pMaterial->GetTextureCount(aiTextureType_LIGHTMAP) != 0)
+		//{
+		//	printf("current material lightmap result: %d\n", pMaterial->GetTextureCount(aiTextureType_LIGHTMAP));
+		//}
+		//if (pMaterial->GetTextureCount(aiTextureType_REFLECTION) != 0)
+		//{
+		//	printf("current material reflection result: %d\n", pMaterial->GetTextureCount(aiTextureType_REFLECTION));
+		//}
+		//if (pMaterial->GetTextureCount(aiTextureType_UNKNOWN) != 0)
+		//{
+		//	printf("current material unknown result: %d\n", pMaterial->GetTextureCount(aiTextureType_UNKNOWN));
+		//}
 
 		InitVariousMaterials(pMaterial, i, aiTextureType_DIFFUSE, Dir);
+		InitVariousMaterials(pMaterial, i, aiTextureType_SPECULAR, Dir);
 		InitVariousMaterials(pMaterial, i, aiTextureType_HEIGHT, Dir);
+		InitVariousMaterials(pMaterial, i, aiTextureType_OPACITY, Dir);
 	}
 
 	return flag;
@@ -215,15 +294,26 @@ bool Model::InitVariousMaterials(const aiMaterial * pMaterial, unsigned int inde
 			reference = m_heightTextures.begin();
 			strType = HeightTexture;
 			break;
+		case aiTextureType_SPECULAR:
+			reference = m_specularTextures.begin();
+			strType = SpecularTexture;
+			break;
+		case aiTextureType_OPACITY:
+			reference = m_opacityTextures.begin();
+			strType = OpacityTexture;
+			break;
 		default:
 			strType = NoneTexture;
 			break;
 		}
-		// 这里认为1个material仅对应1个texture，故index参数取0。是不严谨的，待修改/
+		// 这里认为1个material仅对应1个texture，故index参数取0。是否不严谨？待斟酌/
 		if (pMaterial->GetTexture(type, 0, &path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS)
 		{
 			std::string fullPath = dir + "/" + path.data;
-			printf("materail(%d), path: %s\n", index, fullPath.c_str());
+			//if (type == aiTextureType_OPACITY)
+			//{
+				printf("materail(%d), path: %s\n", index, fullPath.c_str());
+			//}
 			
 			Texture* tex = new Texture(fullPath, GL_TEXTURE_2D);
 			
@@ -233,7 +323,7 @@ bool Model::InitVariousMaterials(const aiMaterial * pMaterial, unsigned int inde
 				SAFE_DELETE_POINTER(tex);
 			}
 			tex->SetTextureType(strType);
-			*(reference + index) = tex;
+			*(reference + index) = tex;		// put each texture's pointer into vector
 
 			result = true;
 		}
@@ -278,8 +368,6 @@ void Model::CalcSceneCenterPos(const aiScene * pScene)
 			}
 		}
 	}
-	printf("Scene max vertex: (%f, %f, %f)\n", vertexMaxX, vertexMaxY, vertexMaxZ);
-	printf("Scene min vertex: (%f, %f, %f)\n", vertexMinX, vertexMinY, vertexMinZ);
 	m_SceneCenterPos.x = vertexMaxX + vertexMinX;
 	m_SceneCenterPos.y = (vertexMaxY + vertexMinY) / 2.0f; // 无需太高/
 	m_SceneCenterPos.z = vertexMaxZ + vertexMinZ;
@@ -287,7 +375,9 @@ void Model::CalcSceneCenterPos(const aiScene * pScene)
 	m_SceneMaxPos.x = vertexMaxX;
 	m_SceneMaxPos.y = vertexMaxY;
 	m_SceneMaxPos.z = vertexMaxZ;
-	printf("Scene center pos: (%f, %f, %f)\n", m_SceneCenterPos.x, m_SceneCenterPos.y, m_SceneCenterPos.z);
+	//printf("Scene max vertex: (%f, %f, %f)\n", vertexMaxX, vertexMaxY, vertexMaxZ);
+	//printf("Scene min vertex: (%f, %f, %f)\n", vertexMinX, vertexMinY, vertexMinZ);
+	//printf("Scene center pos: (%f, %f, %f)\n", m_SceneCenterPos.x, m_SceneCenterPos.y, m_SceneCenterPos.z);
 }
 
 float Model::getSuitableDistanceFactor()

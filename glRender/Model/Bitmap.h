@@ -24,11 +24,12 @@ public:
 	~Bitmap();
 
 	static Bitmap* bitmapFromFile(std::string filePath);
-
+	void printFormatStr();
 	unsigned char* getPixels();
 	unsigned getBMPWidth();
 	unsigned getBMPHeight();
 	GLenum getMapFormat();
+private:
 	std::string getMapFormatStr();
 
 

@@ -36,8 +36,9 @@ void Camera::setScale(Vec3 factor)
 	m_scale = factor;
 }
 
-void Camera::setProjectionMatrix(float fov, float ratio, float nearClip, float farClip)
+void Camera::setProjectionMatrix(float fov, int width, int height, float nearClip, float farClip)
 {
+	float ratio = (float)width / (float)height;
 	m_projMatrix.LoadIdentity();
 	m_projMatrix.Perspective(fov, ratio, nearClip, farClip);
 }
